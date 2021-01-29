@@ -1,0 +1,42 @@
+﻿<mah:MetroWindow
+        xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        x:Class="CP77Tools.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:view="clr-namespace:CP77Tools.UI.View"
+        xmlns:local="clr-namespace:CP77Tools.UI"
+        mc:Ignorable="d"
+        Title="CP77Tools" Height="700" Width="900">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="550" />
+            <RowDefinition Height="150" />
+        </Grid.RowDefinitions>
+        <mah:MetroTabControl x:Name="ActionsTab" Style="{DynamicResource MahApps.Styles.TabControl.Animated}">
+            <TabItem Header="Extract">
+                <Grid>
+                    <view:Extract/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Export">
+                <Grid>
+
+                </Grid>
+            </TabItem>
+            <TabItem Header="Pack">
+                <Grid>
+
+                </Grid>
+            </TabItem>
+        </mah:MetroTabControl>
+        <StackPanel Grid.Row="1" Height="100">
+            <Border BorderThickness="2" BorderBrush="Gray" Background="Black">
+                <ScrollViewer Width="990" Height="100">
+                    <TextBlock Padding="10" x:Name="ConsoleOutput"></TextBlock>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
+    </Grid>
+</mah:MetroWindow>
