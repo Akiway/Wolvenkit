@@ -7,50 +7,140 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:CP77Tools.UI.View"
       mc:Ignorable="d" 
-      d:DesignHeight="495" d:DesignWidth="800">
+      d:DesignHeight="395" d:DesignWidth="900">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="Converter" />
     </UserControl.Resources>
     <Grid>
-        <StackPanel Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-
+        <StackPanel Orientation="Vertical">
             <StackPanel Orientation="Horizontal">
-                <Label>Extraction type:
-                    <Label.ToolTip>
-                        <TextBlock TextWrapping="Wrap">Unbundle target an archive to extract files.
-                        Unccok target an archive to uncook files.</TextBlock>
-                    </Label.ToolTip>
-                </Label>
-                <RadioButton GroupName="command" Content="Unbundle" Margin="10,0" IsChecked="True" Checked="RadioCommand_checked"/>
-                <RadioButton GroupName="command" Content="Uncook" Checked="RadioCommand_checked"/>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Left" Width="450">
+
+                    <Border Style="{StaticResource StepBorder}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="370"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="50"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Stretch" Width="80">
+                                <Label Content="Step 1" Style="{StaticResource StepTitle}"></Label>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource StepDescription}">Select the operation, unbundle the archive or uncook textures.</TextBlock>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
+                                <RadioButton GroupName="command" Content="Unbundle" Margin="10" IsChecked="True" Checked="RadioCommand_checked"/>
+                                <RadioButton GroupName="command" Content="Uncook" Margin="10" Checked="RadioCommand_checked"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource StepBorder}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="370"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="100"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Stretch" Width="80">
+                                <Label Content="Step 2" Style="{StaticResource StepTitle}"></Label>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource StepDescription}">Select the archive to extract from.</TextBlock>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton GroupName="archiveOrigin" Content="Game's archive" Margin="10" IsChecked="True" Checked="RadioCommand_checked"/>
+                                    <ComboBox x:Name="ArchivesDropdown" Height="38" Width="200" Text="Archive" 
+                                  IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton GroupName="archiveOrigin" Content="External archive" Margin="10" Checked="RadioCommand_checked"/>
+                                    <Button Width="150" Margin="0,10" x:Name="btnSelectArchive" Click="btnSelectArchive_Click">Select an archive</Button>
+                                </StackPanel>
+                                <TextBlock x:Name="TextArchiveSelected" Width="300" Foreground="LightGray"></TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Left" Width="450">
+                    <Border Style="{StaticResource StepBorder}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="370"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="100"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Stretch" Width="80">
+                                <Label Content="Step 3" Style="{StaticResource StepTitle}"></Label>
+                                <Label Content="Optional" Style="{StaticResource StepOptional}"></Label>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource StepDescription}">Indicate a pattern for the files researched (e.g. *.mesh, *judy*).</TextBlock>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal" Margin="10,20,0,5">
+                                    <RadioButton GroupName="search" Content="Pattern" IsChecked="True" Margin="0,0,20,0" Checked="RadioPattern_checked"></RadioButton>
+                                    <RadioButton GroupName="search" Content="Regex" Checked="RadioPattern_checked"></RadioButton>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="10,10,0,5">
+                                    <TextBox x:Name="PatternInput" MinWidth="300"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+
+                    <Border Style="{StaticResource StepBorder}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="370"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="50"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Stretch" Width="80">
+                                <Label Content="Step 4" Style="{StaticResource StepTitle}"></Label>
+                                <Label Content="Optional" Style="{StaticResource StepOptional}"></Label>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource StepDescription}">Choose the image format (a dds file will always be generated with the xbm).</TextBlock>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal" Margin="10" Visibility="{Binding Path=ShowUncookPanel, Converter={StaticResource Converter}}">
+                                    <ComboBox x:Name="ExtensionsDropdown" Height="38" Width="80" Text="Archive" 
+                                  IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
+                                </StackPanel>
+                                <!--<TextBlock Margin="5,0,10,0" Foreground="LightGray"></TextBlock>-->
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
             </StackPanel>
 
-            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                <Label Margin="0,4,10,4">Archive</Label>
-                <ComboBox x:Name="ArchivesDropdown" Height="38" Width="200" Text="Archive" 
-                          IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
+            <StackPanel Orientation="Vertical">
+                <Button Margin="0,20,0,10" x:Name="btnExtract" Width="400" FontSize="14" Click="btnExtract_Click">Extract</Button>
+                <ProgressBar Margin="0,10,0,20" Value="40" Width="400"></ProgressBar>
             </StackPanel>
-            <Button Width="150" Margin="0,10" x:Name="btnSelectArchive" Click="btnSelectArchive_Click">Select an archive</Button>
-            <TextBlock x:Name="TextArchiveSelected" Margin="5,0,10,0" Foreground="LightGray"></TextBlock>
-
-            <StackPanel Orientation="Horizontal" Margin="0,20,0,5" Visibility="{Binding Path=ShowUncookPanel, Converter={StaticResource Converter}}">
-                <Label Margin="0,4,10,4">Texture extension:</Label>
-                <ComboBox x:Name="ExtensionsDropdown" Height="38" Width="80" Text="Archive" 
-                          IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
-            </StackPanel>
-            <TextBlock Margin="5,0,10,0" Foreground="LightGray">A dds file will always be generated with the xbm.</TextBlock>
-
-            <StackPanel Orientation="Horizontal" Margin="0,20,0,5">
-                <RadioButton GroupName="search" IsChecked="True" Margin="0,0,10,0">Pattern</RadioButton>
-                <TextBox x:Name="PatternInput" MinWidth="200"/>
-            </StackPanel>
-            
-            <StackPanel Orientation="Horizontal" Margin="0,20,0,5">
-                <RadioButton GroupName="search" Margin="0,0,16,0">Regex</RadioButton>
-                <TextBox x:Name="RegexInput" MinWidth="200"/>
-            </StackPanel>
-
-            <Button Margin="0,40,0,0" x:Name="btnExtract" Click="btnExtract_Click">Extract</Button>
         </StackPanel>
+
     </Grid>
 </UserControl>

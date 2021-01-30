@@ -27,6 +27,7 @@ namespace CP77Tools.UI.View
         private static string command = "Unbundle";
         private static string selectedArchive;
 
+        private bool _isRegex = false;
         private bool _isUncookSelected = false;
         public bool ShowUncookPanel
         {
@@ -63,14 +64,23 @@ namespace CP77Tools.UI.View
             _isUncookSelected = command == "Uncook";
         }
 
+        private void RadioPattern_checked(object sender, RoutedEventArgs e)
+        {
+            var button = sender as RadioButton;
+            if ((bool)button.IsChecked)
+                _isRegex = button.Content.ToString() == "Regex";
+        }
+
         private void btnExtract_Click(object sender, RoutedEventArgs e)
         {
             ((MainWindow)Window.GetWindow(this)).ClearConsole();
             if (string.IsNullOrEmpty(selectedArchive))
                 selectedArchive = archives[ArchivesDropdown.SelectedIndex];
 
-            var pattern = PatternInput.Text;
-            var regex = RegexInput.Text;
+            var patternInput = PatternInput.Text;
+            var regex = _isRegex ? patternInput : "";
+            var pattern = !_isRegex ? patternInput : "";
+
             string[] pathList = { selectedArchive };
 
             if (command == "Unbundle")
