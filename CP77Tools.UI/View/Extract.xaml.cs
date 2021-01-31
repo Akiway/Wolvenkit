@@ -1,18 +1,15 @@
 ﻿using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using CP77Tools.UI.Model;
 using Microsoft.Win32;
 using CP77Tools.Tasks;
+using WolvenKit.Common.Services;
+using WolvenKit.Common.DDS;
+using System.Threading.Tasks;
+using System.Timers;
+using System.Windows.Threading;
 
 namespace CP77Tools.UI.View
 {
@@ -21,14 +18,21 @@ namespace CP77Tools.UI.View
     /// </summary>
     public partial class Extract : UserControl
     {
-        private string[] archives;
-        private string[] extensions = { "dds", "tga", "png", "jpg", "bmp" };
+        private static Dispatcher mainDispatcher = Dispatcher.CurrentDispatcher;
+
+        private GUIConsole guiConsole = Model.GUIConsole.Instance;
+
+        private Timer timerLoadBar;
+
+        private string[] archives = Array.Empty<string>();
+        private string[] extensions = { "dds", "tga", "png", "jpeg", "jpg", "bmp" };
         
         private static string command = "Unbundle";
         private static string selectedArchive;
 
         private bool _isRegex = false;
         private bool _isUncookSelected = false;
+        private bool _isArchiveFromGame = true;
         public bool ShowUncookPanel
         {
             get { return _isUncookSelected; }
@@ -62,6 +66,9 @@ namespace CP77Tools.UI.View
                 command = button.Content.ToString();
 
             _isUncookSelected = command == "Uncook";
+
+            if (Step4Block is not null)
+                Step4Block.Visibility = _isUncookSelected ? Visibility.Visible : Visibility.Hidden;
         }
 
         private void RadioPattern_checked(object sender, RoutedEventArgs e)
@@ -71,28 +78,99 @@ namespace CP77Tools.UI.View
                 _isRegex = button.Content.ToString() == "Regex";
         }
 
+        private void RadioArchive_checked(object sender, RoutedEventArgs e)
+        {
+            var button = sender as RadioButton;
+            if ((bool)button.IsChecked)
+                _isArchiveFromGame = button.Content.ToString() == "Game's archive";
+        }
+
         private void btnExtract_Click(object sender, RoutedEventArgs e)
         {
-            ((MainWindow)Window.GetWindow(this)).ClearConsole();
-            if (string.IsNullOrEmpty(selectedArchive))
-                selectedArchive = archives[ArchivesDropdown.SelectedIndex];
+            var archive = _isArchiveFromGame ? archives[ArchivesDropdown.SelectedIndex] : !string.IsNullOrEmpty(selectedArchive) ? selectedArchive : null;
+            if (string.IsNullOrEmpty(archive))
+            {
+                guiConsole.logger.LogString("No archive indicated.", Logtype.Error);
+                return;
+            }
 
             var patternInput = PatternInput.Text;
             var regex = _isRegex ? patternInput : "";
             var pattern = !_isRegex ? patternInput : "";
 
-            string[] pathList = { selectedArchive };
+            string[] pathList = { archive };
 
             if (command == "Unbundle")
             {
-                ConsoleFunctions.UnbundleTask(pathList, null, null, pattern, regex);
+                Task.Run(() =>
+                {
+                    StartLoadBar();
+                    ConsoleFunctions.UnbundleTask(pathList, null, null, pattern, regex);
+                });
             } else if (command == "Uncook")
             {
-                ConsoleFunctions.UncookTask(pathList, null, WolvenKit.Common.DDS.EUncookExtension.dds, false, 0, pattern, regex);
+                var ext = EUncookExtension.dds;
+                switch (ExtensionsDropdown.SelectedItem)
+                {
+                    case "dds":
+                        ext = EUncookExtension.dds; break;
+                    case "tga":
+                        ext = EUncookExtension.tga; break;
+                    case "png":
+                        ext = EUncookExtension.png; break;
+                    case "jpeg":
+                        ext = EUncookExtension.jpeg; break;
+                    case "jpg":
+                        ext = EUncookExtension.jpg; break;
+                    case "bmp":
+                        ext = EUncookExtension.bmp; break;
+                    default:
+                        ext = EUncookExtension.dds; break;
+                }
+                Task.Run(() =>
+                {
+                    StartLoadBar();
+                    ConsoleFunctions.UncookTask(pathList, null, ext, false, 0, pattern, regex);
+                });
             }
 
         }
 
+        private void StartLoadBar()
+        {
+            guiConsole.logger.LogProgress(0);
+            mainDispatcher.BeginInvoke((Action)(() =>
+            {
+                ExportLoadBar.Value = 0;
+                DisplayLoadBar(true);
+            }));
+            timerLoadBar = new Timer(200);
+            timerLoadBar.Elapsed += UpdateLoadBar;
+            timerLoadBar.AutoReset = true;
+            timerLoadBar.Enabled = true;
+        }
 
+
+        private void UpdateLoadBar(Object source, ElapsedEventArgs e)
+        {
+            if (guiConsole.logger.Progress is null)
+                return;
+
+            if (guiConsole.logger.Progress.Item1 == 1)
+                timerLoadBar.Dispose();
+
+            mainDispatcher.BeginInvoke((Action)(() =>
+            {
+                if (guiConsole.logger.Progress.Item1 == 1)
+                    DisplayLoadBar(false);
+                ExportLoadBar.Value = guiConsole.logger.Progress.Item1;
+            }));
+        }
+
+        private void DisplayLoadBar(bool visibility)
+        {
+            ExportLoadBar.Visibility = visibility ? Visibility.Visible : Visibility.Hidden;
+        }
     }
+
 }

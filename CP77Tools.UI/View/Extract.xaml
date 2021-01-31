@@ -20,7 +20,7 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="370"/>
+                                <ColumnDefinition Width="360"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="50"/>
@@ -31,7 +31,7 @@
                                 <Label Content="Step 1" Style="{StaticResource StepTitle}"></Label>
                             </StackPanel>
 
-                            <TextBlock Style="{StaticResource StepDescription}">Select the operation, unbundle the archive or uncook textures.</TextBlock>
+                            <TextBlock Style="{StaticResource StepDescription}">Select the operation, unbundle an archive or uncook textures.</TextBlock>
 
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
                                 <RadioButton GroupName="command" Content="Unbundle" Margin="10" IsChecked="True" Checked="RadioCommand_checked"/>
@@ -44,7 +44,7 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="370"/>
+                                <ColumnDefinition Width="360"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="50"/>
@@ -59,12 +59,12 @@
 
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton GroupName="archiveOrigin" Content="Game's archive" Margin="10" IsChecked="True" Checked="RadioCommand_checked"/>
+                                    <RadioButton GroupName="archiveOrigin" Content="Game's archive" Margin="10" IsChecked="True" Checked="RadioArchive_checked"/>
                                     <ComboBox x:Name="ArchivesDropdown" Height="38" Width="200" Text="Archive" 
                                   IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton GroupName="archiveOrigin" Content="External archive" Margin="10" Checked="RadioCommand_checked"/>
+                                    <RadioButton GroupName="archiveOrigin" Content="External archive" Margin="10" Checked="RadioArchive_checked"/>
                                     <Button Width="150" Margin="0,10" x:Name="btnSelectArchive" Click="btnSelectArchive_Click">Select an archive</Button>
                                 </StackPanel>
                                 <TextBlock x:Name="TextArchiveSelected" Width="300" Foreground="LightGray"></TextBlock>
@@ -78,7 +78,7 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="370"/>
+                                <ColumnDefinition Width="360"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="50"/>
@@ -106,11 +106,11 @@
                     </Border>
 
 
-                    <Border Style="{StaticResource StepBorder}">
+                    <Border x:Name="Step4Block" Style="{StaticResource StepBorder}" Visibility="Hidden">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="370"/>
+                                <ColumnDefinition Width="360"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="50"/>
@@ -137,8 +137,8 @@
             </StackPanel>
 
             <StackPanel Orientation="Vertical">
-                <Button Margin="0,20,0,10" x:Name="btnExtract" Width="400" FontSize="14" Click="btnExtract_Click">Extract</Button>
-                <ProgressBar Margin="0,10,0,20" Value="40" Width="400"></ProgressBar>
+                <Button Margin="0,30,0,10" x:Name="btnExtract" Width="400" FontSize="14" Click="btnExtract_Click">Extract</Button>
+                <ProgressBar x:Name="ExportLoadBar" Visibility="Hidden" Minimum="0" Maximum="1" Margin="0,10,0,20" Value="40" Width="400"></ProgressBar>
             </StackPanel>
         </StackPanel>
 

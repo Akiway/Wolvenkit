@@ -33,8 +33,8 @@
             </TabItem>
         </mah:MetroTabControl>
         <StackPanel Grid.Row="1">
-            <Border BorderThickness="2" BorderBrush="Gray" Background="Black">
-                <ScrollViewer Width="890" Height="220">
+            <Border BorderThickness="0,2,0,0" BorderBrush="Gray" Background="Black">
+                <ScrollViewer x:Name="ConsoleOutputScroll" Width="890" Height="220">
                     <TextBlock Padding="10" x:Name="ConsoleOutput"></TextBlock>
                 </ScrollViewer>
             </Border>
