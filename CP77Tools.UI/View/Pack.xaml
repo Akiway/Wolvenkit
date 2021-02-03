@@ -27,7 +27,7 @@
         </StackPanel>
 
         <StackPanel Grid.Column="1" Grid.Row="1">
-            <Expander Header="Advanced">
+            <Expander Header="Rebuild options">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal" Margin="10">
                         <CheckBox x:Name="ForceRebuildOption" Content="Force rebuild"/>

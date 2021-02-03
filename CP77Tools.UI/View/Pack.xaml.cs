@@ -55,8 +55,6 @@ namespace CP77Tools.UI.View
             string[] dds = Directory.GetFiles(folder, "*.dds", SearchOption.AllDirectories);
 
             string[] folderList = { folder };
-            Debug.WriteLine(buffers.Length);
-            Debug.WriteLine(dds.Length);
 
             var bufferRecombineNeeded = buffers.Length > 0 || (bool)ForceRebuildOption.IsChecked;
             var textureRecombineNeeded = dds.Length > 0 || (bool)ForceRebuildOption.IsChecked;
