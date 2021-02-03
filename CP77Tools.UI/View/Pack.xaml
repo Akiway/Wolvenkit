@@ -1,0 +1,65 @@
+﻿<UserControl
+      xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+      x:Class="CP77Tools.UI.View.Pack"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:CP77Tools.UI.View"
+      mc:Ignorable="d" 
+      d:DesignHeight="395" d:DesignWidth="900">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="700"/>
+            <ColumnDefinition Width="100"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="130"/>
+            <RowDefinition Height="170"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Column="1" Grid.Row="0">
+            <TextBlock Margin="0,20,0,10">Pack your mod into an archive.</TextBlock>
+            <Button Width="150" Margin="50,10" HorizontalAlignment="Left" x:Name="btnSelectFolder" Click="btnSelectFolder_Click">Select a folder</Button>
+            <TextBlock Margin="50,10,0,0" x:Name="TextFolderSelected" HorizontalAlignment="Left" Width="600" Foreground="LightGray"></TextBlock>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Grid.Row="1">
+            <Expander Header="Advanced">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal" Margin="10">
+                        <CheckBox x:Name="ForceRebuildOption" Content="Force rebuild"/>
+                        <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Rebuild is auto-handled, this will force it's execution even when not required.</TextBlock>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="10,0,10,10">
+                        <CheckBox x:Name="KeepOption" IsChecked="True" Content="Keep"/>
+                        <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Optionally keep existing cr2w files intact and only append the buffer (checked by default).</TextBlock>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="10,0,10,10">
+                        <CheckBox x:Name="UnsaferawOption" IsChecked="True" Content="Unsafe raw"/>
+                        <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Optionally add raw assets (dds textures, fbx) as buffers without check (checked by default).</TextBlock>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="10,0,10,10">
+                        <CheckBox x:Name="CleanOption" Content="Clean"/>
+                        <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Optionally remove buffers and textures after successful recombination.</TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+        </StackPanel>
+
+
+        <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Vertical" HorizontalAlignment="Center">
+            <Button x:Name="btnExtract" Width="400" FontSize="14" Margin="0,0,0,20" Click="btnPack_Click">Pack</Button>
+            <StackPanel Orientation="Horizontal" x:Name="RebuildBar" Visibility="Hidden">
+                <Label Margin="-60,0,10,0">Rebuild</Label>
+                <ProgressBar x:Name="RebuildLoadBar" Minimum="0" Maximum="1" Value="40" Width="400" Height="10"></ProgressBar>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,-26,0,0" x:Name="PackBar" Visibility="Hidden">
+                <Label Margin="-60,0,26,0">Pack</Label>
+                <ProgressBar x:Name="PackLoadBar" Minimum="0" Maximum="1" Value="40" Width="400" Height="10"></ProgressBar>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>
