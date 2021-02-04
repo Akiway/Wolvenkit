@@ -1,18 +1,20 @@
-﻿#Graphical User Interface for CP77 Tools.
+# Graphical User Interface for CP77 Tools.
 
 CP77 Tools version: **1.1.0.5**
 
 Last release: **v0.1-alpha**
 
 
-##Features
+
+## Features
 
 * Extract (Unbundle & Uncook)
 * Export
 * Rebuild & Pack
 
 
-##Roadmap 🚧
+
+## Roadmap 🚧
 
 **Features:**
 - Support multiple files treatment 🏗️
@@ -25,13 +27,15 @@ Last release: **v0.1-alpha**
 **Interface:**
 - Add indicator for hashes loaded / oodle
 - Add colors in the console view
+- (If not console integrated) Add a possibility to open the command line.
 
 **Code:**
 - Dependency injection
 - Integrate the original console
 
 
-##Thanks
+
+## Thanks
 
 Special thanks to
 - rfuzzo
