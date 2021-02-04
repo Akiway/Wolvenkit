@@ -3,6 +3,9 @@ using CP77Tools.Tasks;
 using CP77Tools.UI.Model;
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using System.Timers;
@@ -26,7 +29,7 @@ namespace CP77Tools.UI.View
 
         private System.Timers.Timer timerLoadBar;
 
-        private string file = "";
+        private List<string> files = new List<string> { };
         private string[] extensions = { "dds", "tga", "png", "jpeg", "jpg", "bmp" };
         public Export()
         {
@@ -34,26 +37,42 @@ namespace CP77Tools.UI.View
 
             ExtensionOption.ItemsSource = extensions;
         }
+        // TODO: ExportFileList Scroll to much
+
+        private void updateFileList()
+        {
+            ExportFileList.ItemsSource = new List<string> { };
+            ExportFileList.ItemsSource = files;
+        }
+
         private void btnSelectFile_Click(object sender, RoutedEventArgs e)
         {
+            guiConsole.logger.LogString(files.Count.ToString(), Logtype.Error);
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "All files (*)|*";
+            openFileDialog.Filter = "All files|*";
+            openFileDialog.Multiselect = true;
             if (openFileDialog.ShowDialog() == true)
             {
-                file = openFileDialog.FileName;
-                TextFileSelected.Text = file;
+                files.AddRange(openFileDialog.FileNames);
+                updateFileList();
             }
+        }
+
+        private void btnRemovefile_Click(object sender, RoutedEventArgs e)
+        {
+            Button button = sender as Button;
+            string valueToRemove = (((Grid)button.Parent).Children[0] as TextBlock).Text;
+            files.RemoveAt(files.IndexOf(valueToRemove));
+            updateFileList();
         }
 
         private void btnExport_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(file))
+            if (files.Count < 1)
             {
                 guiConsole.logger.LogString("No file indicated.", Logtype.Error);
                 return;
             }
-
-            string[] fileList = { file };
 
             var ext = EUncookExtension.dds;
             switch (ExtensionOption.SelectedItem)
@@ -76,7 +95,7 @@ namespace CP77Tools.UI.View
 
             Task.Run(() =>
             {
-                ConsoleFunctions.ExportTask(fileList, ext);
+                ConsoleFunctions.ExportTask(files.ToArray(), ext);
             });
         }
     }

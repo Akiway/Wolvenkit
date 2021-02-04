@@ -16,13 +16,13 @@
             <ColumnDefinition Width="100"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="130"/>
+            <RowDefinition Height="140"/>
             <RowDefinition Height="170"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Column="1" Grid.Row="0">
             <TextBlock Margin="0,20,0,10">Pack your mod into an archive.</TextBlock>
-            <Button Width="150" Margin="50,10" HorizontalAlignment="Left" x:Name="btnSelectFolder" Click="btnSelectFolder_Click">Select a folder</Button>
+            <Button Width="150" Margin="50,10" HorizontalAlignment="Left" Cursor="Hand" x:Name="btnSelectFolder" Click="btnSelectFolder_Click">Select a folder</Button>
             <TextBlock Margin="50,10,0,0" x:Name="TextFolderSelected" HorizontalAlignment="Left" Width="600" Foreground="LightGray"></TextBlock>
         </StackPanel>
 
@@ -30,19 +30,19 @@
             <Expander Header="Rebuild options">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal" Margin="10">
-                        <CheckBox x:Name="ForceRebuildOption" Content="Force rebuild"/>
+                        <CheckBox x:Name="ForceRebuildOption" Cursor="Hand" Content="Force rebuild"/>
                         <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Rebuild is auto-handled, this will force it's execution even when not required.</TextBlock>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="10,0,10,10">
-                        <CheckBox x:Name="KeepOption" IsChecked="True" Content="Keep"/>
+                        <CheckBox x:Name="KeepOption" Cursor="Hand" IsChecked="True" Content="Keep"/>
                         <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Optionally keep existing cr2w files intact and only append the buffer (checked by default).</TextBlock>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="10,0,10,10">
-                        <CheckBox x:Name="UnsaferawOption" IsChecked="True" Content="Unsafe raw"/>
+                        <CheckBox x:Name="UnsaferawOption" Cursor="Hand" IsChecked="True" Content="Unsafe raw"/>
                         <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Optionally add raw assets (dds textures, fbx) as buffers without check (checked by default).</TextBlock>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="10,0,10,10">
-                        <CheckBox x:Name="CleanOption" Content="Clean"/>
+                        <CheckBox x:Name="CleanOption" Cursor="Hand" Content="Clean"/>
                         <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Optionally remove buffers and textures after successful recombination.</TextBlock>
                     </StackPanel>
                 </StackPanel>
@@ -51,7 +51,7 @@
 
 
         <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Vertical" HorizontalAlignment="Center">
-            <Button x:Name="btnExtract" Width="400" FontSize="14" Margin="0,0,0,20" Click="btnPack_Click">Pack</Button>
+            <Button x:Name="btnExtract" Width="400" FontSize="14" Margin="0,0,0,20" Cursor="Hand" Click="btnPack_Click">Pack</Button>
             <StackPanel Orientation="Horizontal" x:Name="RebuildBar" Visibility="Hidden">
                 <Label Margin="-60,0,10,0">Rebuild</Label>
                 <ProgressBar x:Name="RebuildLoadBar" Minimum="0" Maximum="1" Value="40" Width="400" Height="10"></ProgressBar>

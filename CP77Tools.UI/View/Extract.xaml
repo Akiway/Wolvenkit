@@ -31,8 +31,8 @@
                             <TextBlock Style="{StaticResource StepDescription}">Select the operation, unbundle an archive or uncook textures.</TextBlock>
 
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
-                                <RadioButton GroupName="command" Content="Unbundle" Margin="10" IsChecked="True" Checked="RadioCommand_checked"/>
-                                <RadioButton GroupName="command" Content="Uncook" Margin="10" Checked="RadioCommand_checked"/>
+                                <RadioButton GroupName="command" Content="Unbundle" Margin="10" Cursor="Hand" IsChecked="True" Checked="RadioCommand_checked"/>
+                                <RadioButton GroupName="command" Content="Uncook" Margin="10" Cursor="Hand" Checked="RadioCommand_checked"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -56,13 +56,13 @@
 
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton GroupName="archiveOrigin" Content="Game's archive" Margin="10" IsChecked="True" Checked="RadioArchive_checked"/>
-                                    <ComboBox x:Name="ArchivesDropdown" Height="38" Width="200" Text="Archive" 
+                                    <RadioButton GroupName="archiveOrigin" Content="Game's archive" Margin="10" Cursor="Hand" IsChecked="True" Checked="RadioArchive_checked"/>
+                                    <ComboBox x:Name="ArchivesDropdown" Height="38" Width="200" Cursor="Hand" Text="Archive" 
                                   IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton GroupName="archiveOrigin" Content="External archive" Margin="10" Checked="RadioArchive_checked"/>
-                                    <Button Width="150" Margin="0,10" x:Name="btnSelectArchive" Click="btnSelectArchive_Click">Select an archive</Button>
+                                    <RadioButton GroupName="archiveOrigin" Content="External archive" Margin="10" Cursor="Hand" Checked="RadioArchive_checked"/>
+                                    <Button Width="150" Margin="0,10" Cursor="Hand" x:Name="btnSelectArchive" Click="btnSelectArchive_Click">Select an archive</Button>
                                 </StackPanel>
                                 <TextBlock x:Name="TextArchiveSelected" Width="300" Foreground="LightGray"></TextBlock>
                             </StackPanel>
@@ -91,12 +91,12 @@
 
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal" Margin="10,20,0,5">
-                                    <RadioButton GroupName="search" Content="Pattern" IsChecked="True" Margin="0,0,20,0" Checked="RadioPattern_checked"></RadioButton>
-                                    <RadioButton GroupName="search" Content="Regex" Checked="RadioPattern_checked"></RadioButton>
+                                    <RadioButton GroupName="search" Content="Pattern" Cursor="Hand" IsChecked="True" Margin="0,0,20,0" Checked="RadioPattern_checked"></RadioButton>
+                                    <RadioButton GroupName="search" Content="Regex" Cursor="Hand" Checked="RadioPattern_checked"></RadioButton>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="10,10,0,5">
-                                    <TextBox x:Name="PatternInput" MinWidth="300"/>
+                                    <TextBox x:Name="PatternInput" MinWidth="300" Cursor="IBeam"/>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
@@ -123,7 +123,7 @@
 
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal" Margin="10">
-                                    <ComboBox x:Name="ExtensionsDropdown" Height="38" Width="80" Text="Archive" 
+                                    <ComboBox x:Name="ExtensionsDropdown" Height="38" Width="80" Cursor="Hand" Text="Archive" 
                                   IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
                                 </StackPanel>
                                 <!--<TextBlock Margin="5,0,10,0" Foreground="LightGray"></TextBlock>-->
@@ -134,7 +134,7 @@
             </StackPanel>
 
             <StackPanel Orientation="Vertical">
-                <Button Margin="0,30,0,10" x:Name="btnExtract" Width="400" FontSize="14" Click="btnExtract_Click">Extract</Button>
+                <Button Margin="0,30,0,10" x:Name="btnExtract" Width="400" FontSize="14" Cursor="Hand" Click="btnExtract_Click">Extract</Button>
                 <ProgressBar x:Name="ExtractLoadBar" Visibility="Hidden" Height="10" Minimum="0" Maximum="1" Margin="0,10,0,20" Value="40" Width="400"></ProgressBar>
             </StackPanel>
         </StackPanel>

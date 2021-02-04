@@ -15,21 +15,39 @@
             <ColumnDefinition Width="100"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="130"/>
-            <RowDefinition Height="170"/>
+            <RowDefinition Height="100"/>
+            <RowDefinition Height="110"/>
+            <RowDefinition Height="100"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Column="1" Grid.Row="0">
             <TextBlock Margin="0,20,0,10">Export a file into raw files (e.g. mesh => buffers, xbm => dds).</TextBlock>
-            <Button Width="150" Margin="50,10" HorizontalAlignment="Left" x:Name="btnSelectFile" Click="btnSelectFile_Click">Select a file</Button>
-            <TextBlock Margin="50,10,0,0" x:Name="TextFileSelected" HorizontalAlignment="Left" Width="600" Foreground="LightGray"></TextBlock>
+            <Button Width="150" Margin="50,10" HorizontalAlignment="Left" Cursor="Hand" x:Name="btnSelectFile" Click="btnSelectFile_Click">Select a file</Button>
+            <!--<TextBlock Margin="50,10,0,0" x:Name="TextFileSelected" HorizontalAlignment="Left" Width="600" Foreground="LightGray"></TextBlock>-->
         </StackPanel>
 
         <StackPanel Grid.Column="1" Grid.Row="1">
+            <ListBox x:Name="ExportFileList" Height="100" HorizontalAlignment="Stretch" Padding="5" ItemsSource="{Binding files, Mode=TwoWay}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="30" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center" Text="{Binding}"/>
+                            <Button Grid.Column="1" Cursor="Hand" Click="btnRemovefile_Click">X</Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Grid.Row="2">
             <Expander Header="Advanced">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal" Margin="10">
-                        <ComboBox x:Name="ExtensionOption" Height="38" Width="80" Text="Archive" 
+                        <ComboBox x:Name="ExtensionOption" Height="38" Width="80" Cursor="Hand" Text="Archive" 
                                   IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
                         <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Choose the image format (a dds file will always be generated with the xbm).</TextBlock>
                     </StackPanel>
@@ -37,8 +55,8 @@
             </Expander>
         </StackPanel>
 
-        <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Vertical" HorizontalAlignment="Center">
-            <Button x:Name="btnExport" Width="400" FontSize="14" Margin="0,0,0,20" Click="btnExport_Click">Extract</Button>
+        <StackPanel Grid.Column="1" Grid.Row="3" Orientation="Vertical" HorizontalAlignment="Center">
+            <Button x:Name="btnExport" Width="400" FontSize="14" Margin="0,0,0,20" Cursor="Hand" Click="btnExport_Click">Export</Button>
         </StackPanel>
     </Grid>
 </UserControl>
