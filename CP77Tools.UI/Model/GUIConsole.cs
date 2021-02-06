@@ -1,11 +1,10 @@
 ﻿using Catel.IoC;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media;
 using System.Windows.Threading;
 using WolvenKit.Common.Services;
 
@@ -16,6 +15,11 @@ namespace CP77Tools.UI.Model
         private static Dispatcher mainDispatcher = Dispatcher.CurrentDispatcher;
 
         private static GUIConsole instance = new GUIConsole();
+
+        public StackPanel output;
+        public ScrollViewer scrollOutput;
+
+        public ILoggerService logger;
 
         static GUIConsole()
         {
@@ -33,61 +37,50 @@ namespace CP77Tools.UI.Model
 
             logger.OnStringLogged += delegate (object? sender, LogStringEventArgs args)
             {
-                switch (args.Logtype)
+                mainDispatcher.BeginInvoke((Action)(() =>
                 {
+                    TextBlock textBlock = new TextBlock();
+                    textBlock.TextWrapping = TextWrapping.Wrap;
 
-                    case Logtype.Error:
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        break;
-                    case Logtype.Important:
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        break;
-                    case Logtype.Success:
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        break;
-                    case Logtype.Normal:
-                    case Logtype.Wcc:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                    switch (args.Logtype)
+                    {
+                        case Logtype.Error:
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            textBlock.Foreground = Brushes.Red;
+                            break;
+                        case Logtype.Important:
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            textBlock.Foreground = Brushes.Yellow;
+                            break;
+                        case Logtype.Success:
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            textBlock.Foreground = Brushes.Green;
+                            break;
+                        case Logtype.Normal:
+                        case Logtype.Wcc:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
 
-                Debug.WriteLine("[" + args.Logtype + "]" + args.Message);
-                Print("[" + args.Logtype + "]" + args.Message);
+                    Debug.WriteLine("[" + args.Logtype + "]" + args.Message);
+                    textBlock.Text = "[" + args.Logtype + "]" + args.Message;
+
+
+                    Print(textBlock);
+                }));
             };
         }
 
-        public TextBlock output;
-        public ScrollViewer scrollOutput;
-
-        public ILoggerService logger;
-
-        private void Print(string text)
+        private void Print(TextBlock text)
         {
-            try
-            {
-                if (Dispatcher.CurrentDispatcher == mainDispatcher)
-                {
-                    output.Text += text + '\r';
-                    scrollOutput.ScrollToBottom();
-                }
-                else
-                {
-                    mainDispatcher.BeginInvoke((Action)(() =>
-                    {
-                        output.Text += text + '\r';
-                        scrollOutput.ScrollToBottom();
-                    }));
-                }
-            } catch (Exception e)
-            {
-
-            }
+            output.Children.Add(text);
+            scrollOutput.ScrollToBottom();
         }
 
         public void Clear()
         {
-            output.Text += "";
+            output.Children.Clear();
         }
     }
 }

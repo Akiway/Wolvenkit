@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
@@ -27,9 +28,9 @@ namespace CP77Tools.UI.View
 
         private GUIConsole guiConsole = Model.GUIConsole.Instance;
 
-        private System.Timers.Timer timerLoadBar;
-
-        private List<string> files = new List<string> { };
+        private List<string> files = new List<string>();
+        private List<string> filesName = new List<string>();
+        private bool displayFullPath = false;
         private string[] extensions = { "dds", "tga", "png", "jpeg", "jpg", "bmp" };
         public Export()
         {
@@ -37,32 +38,43 @@ namespace CP77Tools.UI.View
 
             ExtensionOption.ItemsSource = extensions;
         }
-        // TODO: ExportFileList Scroll to much
 
         private void updateFileList()
         {
-            ExportFileList.ItemsSource = new List<string> { };
-            ExportFileList.ItemsSource = files;
+            filesName.Clear();
+            filesName.AddRange(files.ConvertAll(f => System.IO.Path.GetFileName(f)));
+            PathListBadge.Badge = files.Count > 0 ? files.Count : null;
+            ExportFileList.ItemsSource = new List<string>();
+            ExportFileList.ItemsSource = displayFullPath ? files : filesName;
         }
 
         private void btnSelectFile_Click(object sender, RoutedEventArgs e)
         {
-            guiConsole.logger.LogString(files.Count.ToString(), Logtype.Error);
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "All files|*";
             openFileDialog.Multiselect = true;
             if (openFileDialog.ShowDialog() == true)
             {
                 files.AddRange(openFileDialog.FileNames);
+                files = files.Distinct().ToList();
+                files.Sort();
                 updateFileList();
             }
         }
 
-        private void btnRemovefile_Click(object sender, RoutedEventArgs e)
+        private void btnRemoveFile_Click(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
             string valueToRemove = (((Grid)button.Parent).Children[0] as TextBlock).Text;
-            files.RemoveAt(files.IndexOf(valueToRemove));
+            if (displayFullPath)
+                files.RemoveAt(files.IndexOf(valueToRemove));
+            else
+                files.RemoveAt(filesName.IndexOf(valueToRemove));
+            updateFileList();
+        }
+        private void ExportFolderList_FullPath_Click(object sender, RoutedEventArgs e)
+        {
+            displayFullPath = (bool)((System.Windows.Controls.CheckBox)sender).IsChecked;
             updateFileList();
         }
 

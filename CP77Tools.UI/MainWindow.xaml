@@ -1,5 +1,6 @@
 ﻿<mah:MetroWindow
         xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         x:Class="CP77Tools.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -9,7 +10,15 @@
         xmlns:view="clr-namespace:CP77Tools.UI.View"
         xmlns:local="clr-namespace:CP77Tools.UI"
         mc:Ignorable="d"
-        Title="CP77Tools" Height="700" Width="900">
+        Title="CP77 Tools" Height="700" Width="900">
+    <mah:MetroWindow.LeftWindowCommands>
+        <mah:WindowCommands>
+            <Button Cursor="Hand" Click="Button_RequestNavigate" ToolTip="See the CP77 Tools GUI GitHub">
+                <iconPacks:BoxIcons Kind="LogosGithub"/>
+            </Button>
+            
+        </mah:WindowCommands>
+    </mah:MetroWindow.LeftWindowCommands>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="450" />
@@ -34,8 +43,8 @@
         </mah:MetroTabControl>
         <StackPanel Grid.Row="1">
             <Border BorderThickness="0,2,0,0" BorderBrush="Gray" Background="Black">
-                <ScrollViewer x:Name="ConsoleOutputScroll" Width="890" Height="220">
-                    <TextBlock Padding="10" x:Name="ConsoleOutput" TextWrapping="Wrap"></TextBlock>
+                <ScrollViewer x:Name="ConsoleOutputScroll" Height="220" Padding="10">
+                    <StackPanel x:Name="ConsoleOutput" Orientation="Vertical"></StackPanel>
                 </ScrollViewer>
             </Border>
         </StackPanel>

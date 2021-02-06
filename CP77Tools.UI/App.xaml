@@ -13,6 +13,7 @@
                 <!-- Theme setting -->
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Yellow.xaml" />
                 <ResourceDictionary Source="Resources/Themes/Step.xaml" />
+                <ResourceDictionary Source="Resources/Themes/PathList.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

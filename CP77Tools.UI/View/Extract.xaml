@@ -134,7 +134,7 @@
             </StackPanel>
 
             <StackPanel Orientation="Vertical">
-                <Button Margin="0,30,0,10" x:Name="btnExtract" Width="400" FontSize="14" Cursor="Hand" Click="btnExtract_Click">Extract</Button>
+                <Button Margin="0,30,0,10" Width="400" FontSize="14" Cursor="Hand" Click="btnExtract_Click">Extract</Button>
                 <ProgressBar x:Name="ExtractLoadBar" Visibility="Hidden" Height="10" Minimum="0" Maximum="1" Margin="0,10,0,20" Value="40" Width="400"></ProgressBar>
             </StackPanel>
         </StackPanel>

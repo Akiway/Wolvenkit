@@ -2,37 +2,58 @@
 
 CP77 Tools version: **1.1.0.5**
 
-Last release: **v0.1-alpha**
+Last release: **v0.2-alpha**
 
 
 
 ## Features
 
+Tools:
 * Extract (Unbundle & Uncook)
 * Export
-* Rebuild & Pack
+* Pack (+ Rebuild)
 
+
+Features:
+- Multiple files treatment
 
 
 ## Roadmap 🚧
 
 **Features:**
-- Support multiple files treatment 🏗️
-- CR2W
+- CR2W 🏗️
 - dump
 - verify
 - hash
 - oodle
 
 **Interface:**
+- Add possibility to choose an output folder 🏗️
 - Add indicator for hashes loaded / oodle
-- Add colors in the console view
-- (If not console integrated) Add a possibility to open the command line.
+- (If no command line integrated) Add a possibility to open the command line apart.
 
 **Code:**
-- Dependency injection
+- Dependency injection ?
 - Integrate the original console
 
+
+
+## Changelog
+
+### v0.2-alpha
+CP77 Tools 1.1.0.5
+
+* Updated to CP77 Tools 1.1.0.5
++ Multiple files treatment (Export & Pack)
++ Colors in console
+
+
+### v0.1-alpha
+CP77 Tools 1.1.0.5-beta
+
++ Extract (Unbundle & Uncook)
++ Export
++ Pack (+ Rebuild)
 
 
 ## Thanks

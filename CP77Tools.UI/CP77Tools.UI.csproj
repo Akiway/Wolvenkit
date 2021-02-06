@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="MahApps.Metro" Version="2.4.3" />
+    <PackageReference Include="MahApps.Metro.IconPacks.BoxIcons" Version="4.8.0" />
   </ItemGroup>
 
   <ItemGroup>

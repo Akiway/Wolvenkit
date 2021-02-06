@@ -19,6 +19,7 @@ using System.Diagnostics;
 using Catel.IoC;
 using WolvenKit.Common.Oodle;
 using WolvenKit.Common.Services;
+using Microsoft.Win32;
 
 namespace CP77Tools.UI
 {
@@ -59,6 +60,12 @@ namespace CP77Tools.UI
                                             $"{AppDomain.CurrentDomain.BaseDirectory}.");
 
 
+        }
+
+        private void Button_RequestNavigate(object sender, RoutedEventArgs e)
+        {
+            string url = "https://github.com/Akiway/Wolvenkit/tree/cp77tools-UI/CP77Tools.UI";
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
     }
 }
