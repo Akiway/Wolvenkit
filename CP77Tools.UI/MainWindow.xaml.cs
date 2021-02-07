@@ -34,12 +34,6 @@ namespace CP77Tools.UI
 
             InitializeComponent();
 
-            // TODO list
-            // ? oodle dll import indicator (in the main bar)
-            // * button to open folder in the extracted folder / packed folder
-            // * Possibility to extract from multiples archives
-            // ? Add the possibility to choose the output path
-
             guiConsole.output = ConsoleOutput;
             guiConsole.scrollOutput = ConsoleOutputScroll;
 

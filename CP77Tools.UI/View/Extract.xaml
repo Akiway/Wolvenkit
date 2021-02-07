@@ -56,12 +56,12 @@
 
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton GroupName="archiveOrigin" Content="Game's archive" Margin="10" Cursor="Hand" IsChecked="True" Checked="RadioArchive_checked"/>
+                                    <RadioButton x:Name="ArchiveOriginGame" GroupName="archiveOrigin" Content="Game's archive" Margin="10" Cursor="Hand" IsChecked="True" Checked="RadioArchive_checked"/>
                                     <ComboBox x:Name="ArchivesDropdown" Height="38" Width="200" Cursor="Hand" Text="Archive" 
-                                  IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
+                                  IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0" SelectionChanged="ArchivesDropdown_Changed"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton GroupName="archiveOrigin" Content="External archive" Margin="10" Cursor="Hand" Checked="RadioArchive_checked"/>
+                                    <RadioButton x:Name="ArchiveOriginCustom" GroupName="archiveOrigin" Content="External archive" Margin="10" Cursor="Hand" Checked="RadioArchive_checked"/>
                                     <Button Width="150" Margin="0,10" Cursor="Hand" x:Name="btnSelectArchive" Click="btnSelectArchive_Click">Select an archive</Button>
                                 </StackPanel>
                                 <TextBlock x:Name="TextArchiveSelected" Width="300" Foreground="LightGray"></TextBlock>
@@ -125,8 +125,8 @@
                                 <StackPanel Orientation="Horizontal" Margin="10">
                                     <ComboBox x:Name="ExtensionsDropdown" Height="38" Width="80" Cursor="Hand" Text="Archive" 
                                   IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
+                                    <CheckBox Margin="80,0,0,0" x:Name="vflipOption" Cursor="Hand" Content="Vertical flip"/>
                                 </StackPanel>
-                                <!--<TextBlock Margin="5,0,10,0" Foreground="LightGray"></TextBlock>-->
                             </StackPanel>
                         </Grid>
                     </Border>

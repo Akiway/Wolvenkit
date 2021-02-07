@@ -56,7 +56,15 @@ namespace CP77Tools.UI.View
             {
                 selectedArchive = Path.GetFullPath(openFileDialog.FileName);
                 TextArchiveSelected.Text = Path.GetFileName(selectedArchive);
+                _isArchiveFromGame = false;
+                ArchiveOriginCustom.IsChecked = true;
             }
+        }
+
+        private void ArchivesDropdown_Changed(object sender, RoutedEventArgs e)
+        {
+            _isArchiveFromGame = true;
+            ArchiveOriginGame.IsChecked = true;
         }
 
         private void RadioCommand_checked(object sender, RoutedEventArgs e)
@@ -97,6 +105,7 @@ namespace CP77Tools.UI.View
             var patternInput = PatternInput.Text;
             var regex = _isRegex ? patternInput : "";
             var pattern = !_isRegex ? patternInput : "";
+            bool vflip = (bool)vflipOption.IsChecked;
 
             string[] pathList = { archive };
 
@@ -130,7 +139,7 @@ namespace CP77Tools.UI.View
                 Task.Run(() =>
                 {
                     StartLoadBar();
-                    ConsoleFunctions.UncookTask(pathList, null, ext, false, 0, pattern, regex);
+                    ConsoleFunctions.UncookTask(pathList, null, ext, vflip, 0, pattern, regex);
                 });
             }
 

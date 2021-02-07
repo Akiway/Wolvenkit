@@ -1,18 +1,11 @@
-﻿using CP77.CR2W;
-using CP77Tools.Tasks;
+﻿using CP77Tools.Tasks;
 using CP77Tools.UI.Model;
 using Microsoft.Win32;
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using WolvenKit.Common.DDS;
 using WolvenKit.Common.Services;
@@ -20,7 +13,7 @@ using WolvenKit.Common.Services;
 namespace CP77Tools.UI.View
 {
     /// <summary>
-    /// Logique d'interaction pour UserControl1.xaml
+    /// Logique d'interaction pour Export.xaml
     /// </summary>
     public partial class Export : UserControl
     {
@@ -74,7 +67,7 @@ namespace CP77Tools.UI.View
         }
         private void ExportFolderList_FullPath_Click(object sender, RoutedEventArgs e)
         {
-            displayFullPath = (bool)((System.Windows.Controls.CheckBox)sender).IsChecked;
+            displayFullPath = (bool)((CheckBox)sender).IsChecked;
             updateFileList();
         }
 

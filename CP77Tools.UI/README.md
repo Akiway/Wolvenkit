@@ -21,6 +21,7 @@ Features:
 ## Roadmap 🚧
 
 **Features:**
+- Vertical flip option for uncooking textures 🏗️
 - CR2W 🏗️
 - dump
 - verify
@@ -29,7 +30,9 @@ Features:
 
 **Interface:**
 - Add possibility to choose an output folder 🏗️
-- Add indicator for hashes loaded / oodle
+- Button to open folder in the extracted/packed/exported folder
+- Add indicator for hashes loaded
+- Add oodle dll import indicator (in the main bar)
 - (If no command line integrated) Add a possibility to open the command line apart.
 
 **Code:**
