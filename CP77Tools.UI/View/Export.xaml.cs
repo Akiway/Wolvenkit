@@ -79,6 +79,8 @@ namespace CP77Tools.UI.View
                 return;
             }
 
+            bool vflip = (bool)FlipOption.IsChecked;
+
             var ext = EUncookExtension.dds;
             switch (ExtensionOption.SelectedItem)
             {
@@ -100,7 +102,7 @@ namespace CP77Tools.UI.View
 
             Task.Run(() =>
             {
-                ConsoleFunctions.ExportTask(files.ToArray(), ext);
+                ConsoleFunctions.ExportTask(files.ToArray(), ext, vflip);
             });
         }
     }

@@ -1,6 +1,6 @@
 ﻿<UserControl 
         xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
-        x:Class="CP77Tools.UI.View.Export"
+        x:Class="CP77Tools.UI.View.Cr2w"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -25,7 +25,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
-                <TextBlock Margin="-50,20,0,10">Export a file into raw files (e.g. mesh => buffers, xbm => dds).</TextBlock>
+                <TextBlock Margin="-50,20,0,10">Target a specific cr2w (extracted) file and dumps file information.</TextBlock>
                 <Border Height="10" Width="40" HorizontalAlignment="Left" Margin="-50,0,0,-10" BorderThickness="0,1,1,0" BorderBrush="{mah:StaticResource MahApps.Brushes.Accent2}"/>
                 <Button Width="150" Margin="0,10" HorizontalAlignment="Left" Cursor="Hand" x:Name="btnSelectFile" Click="btnSelectFile_Click">Select a file</Button>
             </StackPanel>
@@ -34,7 +34,7 @@
                     <mah:Badged x:Name="PathListBadge" BadgePlacementMode="Right" BadgeBackground="Transparent" BadgeForeground="{mah:StaticResource MahApps.Brushes.Accent2}" BadgeFontWeight="DemiBold" Badge="">
                         <TextBlock Style="{StaticResource PathList_HeaderText}">Selected files</TextBlock>
                     </mah:Badged>
-                    <CheckBox Style="{StaticResource PathList_HeaderCheck}" Margin="155,0,0,0" Content="Display full path" Click="ExportFolderList_FullPath_Click" mah:CheckBoxHelper.CheckSize="12" mah:CheckBoxHelper.ForegroundUnchecked="Gray" mah:CheckBoxHelper.ForegroundChecked="LightGray">
+                    <CheckBox Style="{StaticResource PathList_HeaderCheck}" Margin="155,0,0,0" Content="Display full path" Click="FolderList_FullPath_Click" mah:CheckBoxHelper.CheckSize="12" mah:CheckBoxHelper.ForegroundUnchecked="Gray" mah:CheckBoxHelper.ForegroundChecked="LightGray">
                         <mah:CheckBoxHelper.CheckGlyphCheckedTemplate>
                             <DataTemplate>
                                 <Border Height="6" Width="6" Background="{mah:StaticResource MahApps.Brushes.Accent}"/>
@@ -42,7 +42,7 @@
                         </mah:CheckBoxHelper.CheckGlyphCheckedTemplate>
                     </CheckBox>
                 </StackPanel>
-                <ListBox Style="{StaticResource PathList_Body}" x:Name="ExportFileList" ItemsSource="{Binding files, Mode=TwoWay}">
+                <ListBox Style="{StaticResource PathList_Body}" x:Name="Cr2wFileList" ItemsSource="{Binding files, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border Style="{StaticResource PathList_BodyElement}">
@@ -62,23 +62,29 @@
         </Grid>
 
         <StackPanel Grid.Column="1" Grid.Row="1">
-            <Expander Header="Texture options" Panel.ZIndex="2">
+            <Expander Header="Advanced" Panel.ZIndex="2">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal" Margin="10">
-                        <CheckBox x:Name="FlipOption" Cursor="Hand" Content="Vertical flip"/>
-                        <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Flips textures vertically.</TextBlock>
+                        <CheckBox IsChecked="True" x:Name="ClassOption" Cursor="Hand" Content="Dump class"/>
+                        <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Dump all class information of file.</TextBlock>
+                    </StackPanel>
+                    <!--<StackPanel Orientation="Horizontal" Margin="10,0,10,10">
+                        <RadioButton GroupName="search" Content="Pattern" Cursor="Hand" IsChecked="True" Margin="0,0,20,0" Checked="RadioPattern_checked"></RadioButton>
+                        <TextBox x:Name="PatternInput" MinWidth="300" Cursor="IBeam"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="10,0,10,10">
-                        <ComboBox x:Name="ExtensionOption" Height="30" Width="80" Cursor="Hand" Text="Archive" 
-                                  IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
-                        <TextBlock Foreground="LightGray" Margin="20,0,0,0" VerticalAlignment="Center">Choose the image format (a dds file will always be generated with the xbm).</TextBlock>
-                    </StackPanel>
+                        <RadioButton GroupName="search" Content="Regex" Cursor="Hand" Checked="RadioPattern_checked"></RadioButton>
+                        <TextBox x:Name="RegexInput" MinWidth="300" Cursor="IBeam"/>
+                    </StackPanel>-->
                 </StackPanel>
             </Expander>
         </StackPanel>
 
         <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Vertical" HorizontalAlignment="Center">
-            <Button Width="400" FontSize="14" Margin="0,0,0,20" Cursor="Hand" Click="btnExport_Click">Export</Button>
+            <Button Width="400" FontSize="14" Margin="0,0,0,17" Cursor="Hand" Click="btnDump_Click">Dump</Button>
+            <StackPanel Orientation="Horizontal" x:Name="DumpBar" Visibility="Hidden">
+                <ProgressBar x:Name="DumpLoadBar" Minimum="0" Maximum="1" Value="40" Width="400" Height="10"></ProgressBar>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </UserControl>
