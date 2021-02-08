@@ -20,12 +20,11 @@ namespace CP77Tools.UI.View
     {
         private static Dispatcher mainDispatcher = Dispatcher.CurrentDispatcher;
 
-        private GUIConsole guiConsole = Model.GUIConsole.Instance;
+        private GUIConsole guiConsole = GUIConsole.Instance;
 
         private Timer timerLoadBar;
 
         private string[] archives = Array.Empty<string>();
-        private string[] extensions = { "dds", "tga", "png", "jpeg", "jpg", "bmp" };
         
         private static string command = "Unbundle";
         private static string selectedArchive;
@@ -46,7 +45,7 @@ namespace CP77Tools.UI.View
                 archives = General.archives;
 
             ArchivesDropdown.ItemsSource = Array.ConvertAll(archives, archive => Path.GetFileNameWithoutExtension(archive));
-            ExtensionsDropdown.ItemsSource = extensions;
+            ExtensionsDropdown.ItemsSource = Enum.GetValues(typeof(EUncookExtension));
         }
         private void btnSelectArchive_Click(object sender, RoutedEventArgs e)
         {
@@ -118,24 +117,8 @@ namespace CP77Tools.UI.View
                 });
             } else if (command == "Uncook")
             {
-                var ext = EUncookExtension.dds;
-                switch (ExtensionsDropdown.SelectedItem)
-                {
-                    case "dds":
-                        ext = EUncookExtension.dds; break;
-                    case "tga":
-                        ext = EUncookExtension.tga; break;
-                    case "png":
-                        ext = EUncookExtension.png; break;
-                    case "jpeg":
-                        ext = EUncookExtension.jpeg; break;
-                    case "jpg":
-                        ext = EUncookExtension.jpg; break;
-                    case "bmp":
-                        ext = EUncookExtension.bmp; break;
-                    default:
-                        ext = EUncookExtension.dds; break;
-                }
+                var ext = (EUncookExtension)ExtensionsDropdown.SelectedItem;
+
                 Task.Run(() =>
                 {
                     StartLoadBar();

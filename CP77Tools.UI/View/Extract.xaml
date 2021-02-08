@@ -103,7 +103,7 @@
                     </Border>
 
 
-                    <Border x:Name="Step4Block" Style="{StaticResource StepBorder}" Visibility="Visible">
+                    <Border x:Name="Step4Block" Style="{StaticResource StepBorder}" Visibility="Hidden">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="80"/>
@@ -125,7 +125,7 @@
                                 <StackPanel Orientation="Horizontal" Margin="10">
                                     <ComboBox x:Name="ExtensionsDropdown" Height="03" Width="80" Cursor="Hand" Text="Archive" 
                                   IsReadOnly="False" StaysOpenOnEdit="True" SelectedIndex="0"/>
-                                    <CheckBox Margin="80,0,0,0" x:Name="vflipOption" Cursor="Hand" Content="Vertical flip"/>
+                                    <CheckBox IsChecked="True" Margin="80,0,0,0" x:Name="vflipOption" Cursor="Hand" Content="Vertical flip"/>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>

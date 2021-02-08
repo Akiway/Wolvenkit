@@ -34,6 +34,11 @@
                     <view:Export/>
                 </Grid>
             </TabItem>
+            <TabItem Header=" Import">
+                <Grid>
+                    <view:Import/>
+                </Grid>
+            </TabItem>
             <TabItem Header=" Pack">
                 <Grid>
                     <view:Pack/>

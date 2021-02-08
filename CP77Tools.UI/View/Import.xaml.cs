@@ -1,22 +1,22 @@
-﻿using CP77Tools.Tasks;
-using CP77Tools.UI.Model;
-using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using CP77Tools.UI.Model;
+using Microsoft.Win32;
 using System.Windows.Threading;
-using WolvenKit.Common.DDS;
 using WolvenKit.Common.Services;
+using static CP77.CR2W.Types.Enums;
+using CP77Tools.Tasks;
 
 namespace CP77Tools.UI.View
 {
     /// <summary>
-    /// Logique d'interaction pour Export.xaml
+    /// Logique d'interaction pour Import.xaml
     /// </summary>
-    public partial class Export : UserControl
+    public partial class Import : UserControl
     {
         private static Dispatcher mainDispatcher = Dispatcher.CurrentDispatcher;
 
@@ -25,11 +25,12 @@ namespace CP77Tools.UI.View
         private List<string> files = new List<string>();
         private List<string> filesName = new List<string>();
         private bool displayFullPath = false;
-        public Export()
+
+        public Import()
         {
             InitializeComponent();
 
-            ExtensionOption.ItemsSource = Enum.GetValues(typeof(EUncookExtension));
+            TextureGroupOption.ItemsSource = Enum.GetValues(typeof(GpuWrapApieTextureGroup));
         }
 
         private void updateFileList()
@@ -37,8 +38,8 @@ namespace CP77Tools.UI.View
             filesName.Clear();
             filesName.AddRange(files.ConvertAll(f => System.IO.Path.GetFileName(f)));
             PathListBadge.Badge = files.Count > 0 ? files.Count : null;
-            ExportFileList.ItemsSource = new List<string>();
-            ExportFileList.ItemsSource = displayFullPath ? files : filesName;
+            FileList.ItemsSource = new List<string>();
+            FileList.ItemsSource = displayFullPath ? files : filesName;
         }
 
         private void btnSelectFile_Click(object sender, RoutedEventArgs e)
@@ -65,13 +66,13 @@ namespace CP77Tools.UI.View
                 files.RemoveAt(filesName.IndexOf(valueToRemove));
             updateFileList();
         }
-        private void ExportFolderList_FullPath_Click(object sender, RoutedEventArgs e)
+        private void FolderList_FullPath_Click(object sender, RoutedEventArgs e)
         {
             displayFullPath = (bool)((CheckBox)sender).IsChecked;
             updateFileList();
         }
 
-        private void btnExport_Click(object sender, RoutedEventArgs e)
+        private void btnImport_Click(object sender, RoutedEventArgs e)
         {
             if (files.Count < 1)
             {
@@ -80,11 +81,11 @@ namespace CP77Tools.UI.View
             }
 
             bool vflip = (bool)FlipOption.IsChecked;
-            var ext = (EUncookExtension)ExtensionOption.SelectedItem;
+            var textureGroup = (GpuWrapApieTextureGroup)TextureGroupOption.SelectedItem;
 
             Task.Run(() =>
             {
-                ConsoleFunctions.ExportTask(files.ToArray(), ext, vflip);
+                ConsoleFunctions.ImportTask(files.ToArray(), textureGroup, vflip);
             });
         }
     }
