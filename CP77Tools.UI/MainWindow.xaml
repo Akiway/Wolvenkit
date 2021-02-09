@@ -49,6 +49,11 @@
                     <view:Cr2w/>
                 </Grid>
             </TabItem>
+            <TabItem Header=" Oodle">
+                <Grid>
+                    <view:Oodle/>
+                </Grid>
+            </TabItem>
         </mah:MetroTabControl>
         <StackPanel Grid.Row="1">
             <Border BorderThickness="0,2,0,0" BorderBrush="Gray" Background="Black">
