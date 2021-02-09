@@ -49,6 +49,11 @@
                     <view:Cr2w/>
                 </Grid>
             </TabItem>
+            <TabItem Header=" Dump">
+                <Grid>
+                    <view:Dump/>
+                </Grid>
+            </TabItem>
             <TabItem Header=" Oodle">
                 <Grid>
                     <view:Oodle/>
