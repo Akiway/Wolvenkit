@@ -140,6 +140,12 @@ DocProject/Help/html
 # Click-Once directory
 publish/
 
+#installers
+Installers/MyOutput/
+Installers/setup-cache/
+Installers/caches/
+Installers/Setup Files/
+
 # Publish Web Output
 *.[Pp]ublish.xml
 *.azurePubxml
@@ -254,6 +260,9 @@ paket-files/
 .idea/
 *.sln.iml
 
+# VSCode
+.vscode
+
 #macOS
 .DS_Store
 
@@ -264,9 +273,17 @@ W3Edit.Render/Models/**
 # Ignore nuget packages
 packages/**
 
+# Ignore launch settings
+launchSettings.json
+
 #Ignore doxygen doc
 docs/doxygen_doc_html/*
 docs/doxygen.warnings
+
+#Ignore vitepress setup
+docs/node_modules/*
+docs/.vitepress/dist/*
+docs/.vitepress/cache/*
 
 #Local git wiki repository - preferred to not delve into git submodules/subtree horrors
 Wolven-kit.wiki
@@ -274,3 +291,5 @@ WolvenKit.IrrlichtLime/Debug-x64
 WolvenKit.IrrlichtLime/Release-x64
 Libs/Irrlicht.dll
 WolvenKit.IrrlichtLime/Release-x86
+msbuild.binlog
+!texconv.pdb

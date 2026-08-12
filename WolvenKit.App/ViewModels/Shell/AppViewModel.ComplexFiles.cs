@@ -1,0 +1,475 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Octokit;
+using WolvenKit.App.Helpers;
+using WolvenKit.App.Interaction;
+using WolvenKit.App.Interaction.Options;
+using WolvenKit.App.Models.ProjectManagement.Project;
+using WolvenKit.App.ViewModels.Dialogs;
+using WolvenKit.App.ViewModels.Tools;
+using WolvenKit.Core;
+using WolvenKit.Interfaces.Extensions;
+using YamlDotNet.RepresentationModel;
+
+namespace WolvenKit.App.ViewModels.Shell;
+
+public partial class AppViewModel : ObservableObject /*, IAppViewModel*/
+{
+    [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
+    private void NewPhotoModeFiles()
+    {
+        if (_projectManager.ActiveProject is not Cp77Project activeProject)
+        {
+            return;
+        }
+
+
+        if (GetModderName() is not string modderName || string.IsNullOrEmpty(modderName))
+        {
+            return;
+        }
+
+        var dialogModel = Interactions.ShowPhotoModeDialogue((activeProject, SettingsManager));
+
+        if (dialogModel is null)
+        {
+            return;
+        }
+
+        var relativePhotoModeFolder = dialogModel.PhotomodeRelativeFolder.Trim();
+
+        var relativeEntFilePath = GetRelativeDestPath(dialogModel.EntFileName);
+        var relativeAppFilePath = GetRelativeDestPath(dialogModel.AppFileName);
+
+        var inkatlasFileName = string.IsNullOrEmpty(dialogModel.InkatlasFileName)
+            ? "photomode_preview_icon.inkatlas"
+            : dialogModel.InkatlasFileName;
+        var relativeInkatlasFilePath = GetRelativeDestPath(inkatlasFileName);
+
+        ProjectExplorerViewModel.SuspendFileWatcherStatic();
+
+        /*
+         * Copy and connect .app and .ent file
+         */
+        try
+        {
+            TemplateFileTools.CreatePhotoModeAppAndEnt(new PhotomodeEntAppOptions()
+                {
+                    AppSourceRelPath = dialogModel.SelectedApp,
+                    AppDestRelPath = relativeAppFilePath,
+                    EntSourceRelPath = dialogModel.SelectedEnt,
+                    EntDestRelPath = relativeEntFilePath,
+                    TargetDir = relativePhotoModeFolder,
+                    WriteAppFile = dialogModel.IsCreateAppFile,
+                    WriteEntFile = dialogModel.IsCreateEntFile,
+                    BodyGender = dialogModel.SelectedBodyGender,
+                    IsOverwrite = dialogModel.IsOverwrite
+                }
+            );
+
+
+            var absolutePhotomodeFolder = Path.Join(activeProject.ModDirectory, relativePhotoModeFolder);
+
+            /*
+             * Copy inkatlas files
+             */
+            if (dialogModel.IsCreateInkatlasFile)
+            {
+                TemplateFileTools.CopyInkatlasTemplateSingle(relativeInkatlasFilePath, dialogModel.IsOverwrite);
+            }
+
+            /*
+             * Create yaml file
+             */
+            if (dialogModel.IsCreateYamlFile)
+            {
+                var yamlTargetDir = Path.Join(_projectManager.ActiveProject.GetResourceTweakDirectory(), "photomode");
+
+                TemplateFileTools.CreatePhotomodeYaml(new PhotomodeYamlOptions()
+                {
+                    NpcName = dialogModel.NpcName,
+                    InkatlasPath = relativeInkatlasFilePath,
+                    IconName = "custom_icon",
+                    ModderName = modderName,
+                    BodyGender = dialogModel.SelectedBodyGender,
+                    YamlFileAbsolutePath = Path.Join(yamlTargetDir, dialogModel.YamlFileName),
+                    EntFilePath = relativeEntFilePath,
+                    Overwrite = dialogModel.IsOverwrite
+                });
+            }
+
+            // keep outside of if check because we need this for the .xl file generation
+            var jsonFileRelativePath = @"path\to\your\file.json";
+            if (!string.IsNullOrEmpty(dialogModel.JsonFileName))
+            {
+                jsonFileRelativePath = dialogModel.JsonFileName.StartsWith(relativePhotoModeFolder)
+                    ? dialogModel.JsonFileName
+                    : Path.Join(relativePhotoModeFolder, dialogModel.JsonFileName);
+            }
+
+            if (dialogModel.IsCreateJsonFile)
+            {
+                var locKey =
+                    $"{modderName.ToArchiveFileName()}_{dialogModel.NpcName.ToArchiveFileName()}_photomode_i18n";
+
+                var jsonFileAbsolutePath = Path.Join(activeProject.ModDirectory, jsonFileRelativePath);
+
+                if (File.Exists(jsonFileAbsolutePath) && dialogModel.IsOverwrite)
+                {
+                    File.Delete(jsonFileAbsolutePath);
+                }
+
+                TemplateFileTools.CreateOrAppendToJsonFile(
+                    jsonFileAbsolutePath,
+                    new Dictionary<string, string> { { locKey, dialogModel.NpcName } },
+                    dialogModel.IsOverwrite,
+                    _loggerService
+                );
+            }
+
+            if (dialogModel.IsCreateXlFile && !string.IsNullOrEmpty(dialogModel.XlFileName))
+            {
+                var xlPath = Path.Join(activeProject.ResourcesDirectory, $"{dialogModel.XlFileName}");
+                if (File.Exists(xlPath) && dialogModel.IsOverwrite)
+                {
+                    File.Delete(xlPath);
+                }
+
+                var scopeName = dialogModel.SelectedBodyGender switch
+                {
+                    PhotomodeBodyGender.Cat => "photomode_cat.ent",
+                    PhotomodeBodyGender.Massive => "photomode_mm.ent",
+                    PhotomodeBodyGender.Big => "photomode_mb.ent",
+                    PhotomodeBodyGender.Male => "photomode_ma.ent",
+                    PhotomodeBodyGender.Female => "photomode_wa.ent",
+                    _ => "photomode_wa.ent",
+                };
+
+                if (!File.Exists(xlPath))
+                {
+                    var i18Node = YamlHelper.CreateLocalizationNode(jsonFileRelativePath);
+                    var scopeNode = YamlHelper.CreateScopeNode(scopeName, [relativeEntFilePath]);
+                    var rootNode = new YamlMappingNode { { "localization", i18Node }, { "resource", scopeNode } };
+                    YamlHelper.WriteYaml(xlPath, rootNode);
+                }
+            }
+
+            var absoluteAppFilePath = Path.Join(absolutePhotomodeFolder, dialogModel.SelectedApp);
+            if (dialogModel.IsCreateAppFile && File.Exists(absoluteAppFilePath))
+            {
+                var facialAnim = dialogModel.SelectedBodyGender switch
+                {
+                    PhotomodeBodyGender.Male => SelectAnimationPathViewModel.FacialAnimPathMale,
+                    PhotomodeBodyGender.Female => SelectAnimationPathViewModel.FacialAnimPathFemale,
+                    PhotomodeBodyGender.Big => SelectAnimationPathViewModel.FacialAnimPathMale,
+                    PhotomodeBodyGender.Massive => SelectAnimationPathViewModel.FacialAnimPathMale,
+                    PhotomodeBodyGender.Cat => SelectAnimationPathViewModel.FacialAnimPathFemale,
+                    _ => SelectAnimationPathViewModel.FacialAnimPathFemale,
+                };
+                _documentTools.SetFacialAnimations(absoluteAppFilePath, facialAnim,
+                    null, SelectAnimationPathViewModel.PhotomodeAnimEntriesFemaleDefault);
+            }
+
+            _loggerService.Success("Done! Your photo mode NPV should now work!");
+        }
+        finally
+        {
+            ProjectExplorerViewModel.ResumeFileWatcherStatic();
+        }
+
+        return;
+
+        string GetRelativeDestPath(string pathOrFileName)
+        {
+            if (activeProject.ModFiles.Contains(pathOrFileName))
+            {
+                return pathOrFileName;
+            }
+
+            if (pathOrFileName.HasFileExtension(".yaml"))
+            {
+                return Path.Join(
+                    _projectManager.ActiveProject.GetResourceTweakDirectory(SettingsManager.UseAuthorNameAsSubfolder),
+                    pathOrFileName);
+            }
+
+            return Path.Join(relativePhotoModeFolder, pathOrFileName);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
+    private void GenerateInkatlas()
+    {
+        if (_projectManager.ActiveProject is not Cp77Project activeProject)
+        {
+            return;
+        }
+
+        if (Interactions.ShowGenerateInkatlasDialogue(activeProject) is not AddInkatlasDialogViewModel vm)
+        {
+            return;
+        }
+
+        if (!Directory.Exists(vm.PngSourceDir))
+        {
+            _loggerService.Error("PngSourceDir does not exist.");
+            return;
+        }
+
+        // Get all PNG files from source folder
+        var pngFiles = Directory.GetFiles(vm.PngSourceDir, "*.png");
+        if (pngFiles.Length == 0)
+        {
+            _loggerService.Error("The source folder does not contain any PNG files.");
+            return;
+        }
+
+        var fileSuccessfullyWritten = InkatlasImageGenerator.GenerateAtlas(
+                pngFolder: vm.PngSourceDir,
+                relativeSourcePath: vm.RelativePath,
+                atlasFileName: vm.InkatlasFileName,
+                tileWidth: int.Parse(vm.TileWidth),
+                tileHeight: int.Parse(vm.TileHeight),
+                _cr2WTools,
+                activeProject
+            );
+
+        if (fileSuccessfullyWritten)
+        {
+            _loggerService.Success("Done! Now import the .png files via Import Tool.");
+        }
+        else
+        {
+            _loggerService.Warning(
+                "Couldn't overwrite inkatlas file! Please rename _new.inkatlas and import the .png files via Import Tool.");
+        }
+    }
+
+    private static string[] s_extensions = [".ent", ".mesh", ".mi", ".anims", ".particle", ".effect"];
+    private static readonly List<string> s_worldBuilderDataPath =
+        ["bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "entSpawner", "data"];
+
+    [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
+    private void RegisterWorldbuilderFiles()
+    {
+        if (_projectManager.ActiveProject is not Cp77Project activeProject)
+        {
+            return;
+        }
+
+        var files = activeProject.ModFiles
+            .Where(f => s_extensions.Contains(Path.GetExtension(f)))
+            .OrderBy(Path.GetExtension)
+            .ToList();
+
+        if (files.Count == 0)
+        {
+            _loggerService.Info(
+                "You have no matching files in your project, there's nothing to add (only supports " +
+                string.Join(", ", s_extensions) + ").");
+            _notificationService.Info(
+                "You have no matching files in your project, there's nothing to add. See log for detail");
+            return;
+        }
+
+        // check prop entries for the user
+        var dict = files.ToDictionary(f => f,
+            f => f.Contains("prop") || f.Contains("amm") || f.Contains("asset"));
+
+        if (Interactions.ShowChecklistDialogue(
+                new ChecklistDialogOptions(dict,
+                    "Select asset files",
+                    "Select the files you want to make available to World Builder.",
+                    "WorldBuilder file name",
+                    activeProject.ModName.ToArchiveFileName()
+                )
+            ) is not { } dialogModel || dialogModel.SelectedOptions.Count == 0)
+        {
+            return;
+        }
+
+        var wbDataFolder = Path.Join([activeProject.ResourcesDirectory, ..s_worldBuilderDataPath]);
+        Directory.CreateDirectory(wbDataFolder);
+
+        var fileName = dialogModel.InputFieldText;
+        if (!fileName.EndsWith(".txt"))
+        {
+            fileName += ".txt";
+        }
+
+        var subfolder = GetModderName();
+
+        WriteData(f => f.EndsWith(".mesh"), ["spawnables", "mesh", "all"]);
+        WriteData(f => f.EndsWith(".anims"), ["spawnables", "ai", "aispot"]);
+        WriteData(f => f.EndsWith(".ent"), ["spawnables", "entity", "templates"]);
+        WriteData(f => f.EndsWith(".mi"), ["spawnables", "visual", "decals"]);
+        WriteData(f =>f.EndsWith(".particle"), ["spawnables", "visual", "particles"]);
+        WriteData(f =>f.EndsWith(".effect"), ["spawnables", "visual", "effects"]);
+        return;
+
+        // Write data to file. First param: filter function (predicate for entries)
+        // Second function: path to target location (will write to moddername/filename.txt)
+        void WriteData(Func<string, bool> predicate, params string[] folderPath)
+        {
+            var entries = dialogModel.SelectedOptions.Where(predicate).ToList();
+            if (entries.Count == 0)
+            {
+                return;
+            }
+
+            var subdir = Path.Join([..folderPath, subfolder]);
+            Directory.CreateDirectory(Path.Join(wbDataFolder, subdir));
+
+            File.WriteAllText(Path.Join(wbDataFolder, subdir, fileName),
+                string.Join(Environment.NewLine, entries));
+
+            _loggerService.Success(
+                $"{entries.Count} entries written to {Path.Join([..s_worldBuilderDataPath, subdir, fileName])}");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
+    private void GenerateMinimalQuestFiles()
+    {
+        if (_projectManager.ActiveProject is not Cp77Project activeProject)
+        {
+            return;
+        }
+
+        if (Interactions.ShowGenerateQuestDialogue(activeProject) is not { } dialogModel)
+        {
+            return;
+        }
+
+        if (GetModderName() is not string modderName || string.IsNullOrEmpty(modderName))
+        {
+            return;
+        }
+        var options = new QuestGenerationOptions
+        {
+            ModName = dialogModel.ModName,
+            TargetRoot = Path.Combine(activeProject.ModDirectory, "mod"),
+            ModderName = modderName.ToLower(),
+        };
+
+        TemplateFileTools.GenerateMinimalQuest(options);
+
+        _loggerService.Success($"Minimal quest files generated for {options.ModName}!");
+    }
+
+    [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
+    private void AddOrEditRadio()
+    {
+        if (_projectManager.ActiveProject is not Cp77Project activeProject ||
+            GetModderName() is not string modderName || string.IsNullOrEmpty(modderName))
+        {
+            return;
+        }
+
+
+        if (Interactions.CreateOrEditRadioDialog(activeProject) is not { } dialogModel)
+        {
+            return;
+        }
+
+        TemplateFileTools.CreateRadio(dialogModel, modderName, activeProject);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
+    private void GeneratePropItem()
+    {
+        if (_projectManager.ActiveProject is not Cp77Project activeProject)
+        {
+            return;
+        }
+
+        if (!activeProject.ModFiles.Any(f => f.Contains(".mesh")))
+        {
+            Interactions.ShowPopup("You need at least one .mesh file in your project to use this",
+                "Please add a mesh!");
+            return;
+        }
+
+        if (Interactions.ShowGeneratePropFileModel(activeProject) is not { } dialogModel)
+        {
+            return;
+        }
+
+
+        TemplateFileTools.GeneratePropFiles(dialogModel);
+        _loggerService.Success($"{dialogModel.PropName} was created and registered!");
+    }
+
+    [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
+    private void AddPlayerHead()
+    {
+        if (_projectManager.ActiveProject is not Cp77Project activeProject)
+        {
+            return;
+        }
+
+        if (Interactions.ShowNewPlayerHeadView() is not { } dialogModel || dialogModel.SelectedFiles.Count == 0)
+        {
+            return;
+        }
+
+        var filesToAdd = dialogModel.SelectedFiles.ToList();
+        var existingFiles = activeProject.ModFiles.Where(f => dialogModel.SelectedFiles.Contains(f)).ToList();
+
+        if (existingFiles.Count > 0 && !Interactions.ShowQuestionYesNo((
+                $"Do you want to overwrite the existing files \n\t{string.Join("\n\t", existingFiles)}?",
+                "One or more files already exists!")))
+        {
+            filesToAdd = filesToAdd.Where(f => !existingFiles.Contains(f)).ToList();
+        }
+
+        if (filesToAdd.Count == 0)
+        {
+            return;
+        }
+
+        _notificationService.Info("Adding player head files. Wolvenkit may be unresponsive...");
+
+        var failedFiles = 0;
+        var tasks = filesToAdd.Select(relativePath => Task.Run(() =>
+        {
+            try
+            {
+                ProjectResourceTools.AddToProject(relativePath);
+            }
+            catch (Exception e)
+            {
+                System.Threading.Interlocked.Increment(ref failedFiles);
+                _loggerService.Error($"Failed to add file {relativePath}: {e.Message}");
+            }
+        })).ToArray();
+
+        Task.WhenAll(tasks).GetAwaiter().GetResult();
+
+        if (filesToAdd.Count == failedFiles)
+        {
+            _loggerService.Error("Failed to add player head files. Please see the log view for details.");
+            _notificationService.Error("Failed to add player head files. Please see the log view for details.");
+        }
+        else if (failedFiles > 0)
+        {
+            _loggerService.Success(
+                $"Added {filesToAdd.Count - failedFiles} files. {failedFiles} files failed. See log for details.");
+            _loggerService.Warning($"{failedFiles} files failed. See log for details.");
+            _notificationService.Success(
+                $"Added {filesToAdd.Count - failedFiles} files. {failedFiles} files failed. See log for details.");
+            _notificationService.Warning($"{failedFiles} files failed. See log for details.");
+        }
+        else
+        {
+            _loggerService.Success(
+                $"Added player head files. For sculpting tutorial, see {WikiLinks.PlayerHeadTutorial}.");
+            _notificationService.Success($"Successfully added {filesToAdd.Count} files to your project.");
+        }
+    }
+}

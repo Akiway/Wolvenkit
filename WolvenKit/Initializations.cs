@@ -1,0 +1,89 @@
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
+using System.Xml;
+using ICSharpCode.AvalonEdit.Highlighting;
+using ICSharpCode.AvalonEdit.Highlighting.Xshd;
+using ReactiveUI;
+using Splat;
+using Syncfusion.SfSkinManager;
+using Syncfusion.Themes.MaterialDark.WPF;
+using WolvenKit.App.Helpers;
+using WolvenKit.App.Services;
+using WolvenKit.App.ViewModels.Shell;
+using WolvenKit.Core.Helpers;
+using WolvenKit.Views.Shell;
+
+namespace WolvenKit
+{
+    public static class Initializations
+    {
+        /// <summary>
+        /// Initialize everything related to Theming.
+        /// </summary>
+        public static void InitializeThemeHelper()
+        {
+            var settingsManager = Locator.Current.GetService<ISettingsManager>();
+
+            HandyControl.Themes.ThemeManager.Current.SetCurrentValue(HandyControl.Themes.ThemeManager.ApplicationThemeProperty, HandyControl.Themes.ApplicationTheme.Dark);
+            if (settingsManager.UiScale == 0)
+            {
+                settingsManager.UiScale = (int)(100.0 * ComputeScaleFromResolution(SystemParameters.PrimaryScreenHeight));
+            }
+        }
+
+        public static void InitializeSyntaxHighlighting()
+        {
+            var customHighlightNames = new string[] { "JavaScript-DarkMode", "YAML" };
+
+            foreach (var customHighlightName in customHighlightNames)
+            {
+                // Load our custom highlighting definition
+                IHighlightingDefinition customHighlighting;
+                using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream($"WolvenKit.Resources.SyntaxHighlighting.{customHighlightName}.xshd");
+                if (s == null)
+                {
+                    throw new InvalidOperationException("Could not find embedded resource");
+                }
+
+                using XmlReader reader = new XmlTextReader(s);
+                var hlXshdDef = HighlightingLoader.LoadXshd(reader);
+                customHighlighting = HighlightingLoader.Load(hlXshdDef, HighlightingManager.Instance);
+
+                // and register it in the HighlightingManager
+                HighlightingManager.Instance.RegisterHighlighting(hlXshdDef.Name, hlXshdDef.Extensions.ToArray(), customHighlighting);
+            }
+        }
+
+        public static void InitializeLicenses()
+        {
+           const string v_34_x_x =
+                "Ngo9BigBOggjHTQxAR8/V1JAaF5cX2pCd1p/TH5YfUNzdUVEY1ZUTXxaS1ZhSXxVdk1jX35bcndXTmNfU0F9XEY=";
+            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(v_34_x_x);
+        }
+
+        public static void InitializeShell(ISettingsManager settingsManager)
+        {
+            // Set service locator.
+            var mainWindow = Locator.Current.GetService<IViewFor<AppViewModel>>();
+
+            GcHelper.CleanupMemory();
+
+            if (mainWindow is MainView window)
+            {
+                window.Show();
+            }
+        }
+
+        private static double ComputeScaleFromResolution(double height)
+        {
+            var scale = height / 1080.0;
+
+            scale = Math.Clamp(scale, 1.0, 4.0);
+            return scale;
+        }
+    }
+}

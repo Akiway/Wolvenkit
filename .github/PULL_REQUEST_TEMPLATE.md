@@ -1,11 +1,12 @@
-# Pull request template
+# $PULL_REQUEST_TITLE
 
-<PULL REQUEST TITLE>
+**Implemented:**
+- your_feature_1
 
-Implemented:
-- <Features implemented>
+**Fixed:**
+- your_bugfix_1
 
-Fixed:
-- <Fixes>
+**Additional notes:**
+closes_issue_number
 
-<Additional notes>
+<!-- If this is your first time contributing please read https://wolvenkit.github.io/WolvenKit/contributing/pull-requests.html -->

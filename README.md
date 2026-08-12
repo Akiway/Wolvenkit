@@ -1,84 +1,118 @@
-# WolvenKit
-<center><h2><strong>A community mod editor for CDPR Games</h2></strong></center>  
+<p align="center">
+  <a href="https://wiki.redmodding.org/wolvenkit"><img src="https://user-images.githubusercontent.com/65016231/191120204-c8e08bb2-d68b-4919-91ec-f8c1aaef1e6a.png"/></a><br /><br />
+</p>
 
-![Screenshot](/assets/screenshot.png)
-![Screenshot](/assets/screenshot2.png)
+![GitHub Release Date](https://img.shields.io/github/release-date/WolvenKit/WolvenKit)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/WolvenKit/WolvenKit/check-only.yml)
+![GitHub all releases](https://img.shields.io/github/downloads/WolvenKit/WolvenKit/total)
+![GitHub issues](https://img.shields.io/github/issues/WolvenKit/WolvenKit)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/WolvenKit/WolvenKit)
+<a href="https://discord.gg/Epkq79kd96"><img src="https://img.shields.io/discord/717692382849663036.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2"></a>
 
-![WolvenKit-Nightly](https://github.com/WolvenKit/Wolven-kit/workflows/WolvenKit-Nightly/badge.svg)
-[![GitHub issues](https://img.shields.io/github/issues/WolvenKit/Wolven-kit.svg)](https://github.com/WolvenKit/Wolven-kit/issues)
-[![GitHub forks](https://img.shields.io/github/forks/WolvenKit/Wolven-kit.svg)](https://github.com/WolvenKit/Wolven-kit/network)
-[![GitHub stars](https://img.shields.io/github/stars/WolvenKit/Wolven-kit.svg)](https://github.com/WolvenKit/Wolven-kit/stargazers)
-[![GitHub license](https://img.shields.io/badge/license-AGPL-blue.svg)](https://raw.githubusercontent.com/WolvenKit/Wolven-kit/master/LICENSE)
-![Github downloads](https://img.shields.io/github/downloads/WolvenKit/Wolven-Kit/total)
-[![Discord](https://img.shields.io/discord/717692382849663036.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/cp77modding)
-***
-This repository is created to demonstrate how **REDengine 3** reads and writes file formats and experiment how the game **The Witcher 3: The Wild Hunt** works. The whole program is made fully for education purpose we are in no way responsible if your PC or game breaks. This project is completely open source and everyone is free to contribute to it and in no way it is made to generate revenue. It was originally [started by Sarcen](http://forums.cdprojektred.com/forum/en/the-witcher-series/the-witcher-3-wild-hunt/mod-discussions/58758-mod-editor) in 2015 when the game originally came out. After he abbandoned the project a few of us picked it up to continue it. It allows reading and writing nearly every file format by REDengine 3 to some extent. It can be used to create file modifications to the assets of the game. This is far from done so please make sure to check on the project often since it is in heavy development. Currently we are progressing with support for CDPR's new game Cyberpunk 2077.
+> ⚠️ This repository focuses on REDengine 4 for Cyberpunk 2077. For WolvenKit for <em>The Witcher 3: Wild Hunt</em> please see: https://github.com/WolvenKit/WolvenKit-7
 
-***Copyright Disclaimer:*** Under Section 107 of the Copyright Act 1976, allowance is made for "fair use" for purposes such as criticism, comment, news reporting, teaching, scholarship, and research. Fair use is a use permitted by copyright statute that might otherwise be infringing. Non-profit, educational or personal use tips the balance in favor of fair use.".This project is solely made for research and in no way made to generate any revenue.
-***
+WolvenKit is an open-source modding tool for <em>Cyberpunk 2077</em>. Our vision is to develop a standalone software which is capable of reading and writing all REDengine file formats. Additionally the WolvenKit application is designed to simplify and accelerate modding workflows.
+This repository was created to demonstrate how <a href="https://en.wikipedia.org/wiki/CD_Projekt">CDPR</a>'s proprietary <a href="https://en.wikipedia.org/wiki/CD_Projekt#REDengine"><strong>REDengine</strong></a> reads and writes file formats.
 
-## Team:
-**Project lead: Traderain**  
-Core development team:
-- **Traderain** (project management, core development etc.)
-- **rfuzzo**  (core development)
-- **michaelpolakatwork** (rendering)
-- **Maxzor** (development)
+This toolkit is being made solely for research and educational purposes, and the dev team is in no way responsible for any malfunctions that occur from its use.
+It's completely open source, licensed under the <a href="https://github.com/WolvenKit/WolvenKit/blob/main/LICENSE">GPL-3.0</a>, and in no way is it made to generate revenue.
 
-Special thanks to:
-- kote2ster
-- George Tziotis
-- Murzinio
-- vonLeebpl
-- ali-alidoust
-- Lim3zer0
-- sw3dg1n
-- robymontyz
-- philippTheCat
-- mattstates
-- dnandha
-- carlosproiete
-- Strahlemann83
-- Jicksaw
-- Anras573
-- rmemr
-- CAPA
-- DJ_Kovrik
-- KNG
-- SkacikPL
-- Mezziaz
-- The modding discord (https://discord.gg/tdSUQQe)
+---
 
-## Credits:
+<h3 align="center">
+  <a href="#installation">Installation</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#contributing">Contributing</a> •
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#credits">Credits</a> •
+  <a href="#license">License</a>
+</h3>
 
-- https://xentax.com
-- https://zenhax.com
-- https://github.com/hhrhhr/Lua-utils-for-Witcher-3
-- https://github.com/gamebooster/witcher3-booster
-- https://bitbucket.org/jlouis/witcherconverter
-- https://sourceforge.net/projects/vgmtoolbox/
-- http://forums.cdprojektred.com/forum/en/the-witcher-series/the-witcher-3-wild-hunt/mod-discussions
-- https://bitbucket.org/zabb65/payday-2-modding-information
-- https://modworkshop.net/showthread.php?tid=101
-- https://github.com/Atvaark/W3SavegameEditor
-- https://www.ffmpeg.org/
-- http://irrlicht.sourceforge.net/
-- Sarcen for Sarcen's W3Edit
+## Installation
 
-***
+Wolvenkit requires the latest .NET 10.0 runtime:
 
-## Building:
-Visual Studio 2019 required. All the required files are either nuget packages which will be automatically downloaded once you press build or included in the package in the [Libs directory](/Libs/).
-Due to the current popularity if te LFS quoata is depleted you can get the needed libs for the renderer here: https://outwa.it/lib.zip
+1. Go to [Microsoft's .NET download page](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+2. Find the ".NET Desktop Runtime 10.0.x" section and download the installer for your architecture (x64)
+3. Run the downloaded installer
 
-***
+----------
 
-## Contributing:
-Please do! Fork the project and please do your changes in small incremental steps with descriptive commit messages. Code quality is not the biggest concern but please don't do stupid mistakes which may lead to the denial of the pull request. Please create an issue when implementing a feature so people don't work on the same feature/issue.
+There are multiple ways to install Wolvenkit:
+
+### Portable or Installer
+
+Download either the latest stable version or the current nightly (beta) version from here:
+
+| Package | Latest Release | Checks  |
+| ------- | ------------ | ----------------- |
+| [WolvenKit Nightly](https://github.com/WolvenKit/WolvenKit-nightly-releases/releases/latest) | [![GitHub release (latest by date)](https://img.shields.io/github/v/release/WolvenKit/WolvenKit-nightly-releases)](https://github.com/WolvenKit/WolvenKit-nightly-releases/releases/latest) | ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/WolvenKit/WolvenKit/nightly.yml) |
+| [WolvenKit](https://github.com/WolvenKit/WolvenKit/releases/latest) | [![GitHub release (latest by date)](https://img.shields.io/github/v/release/WolvenKit/WolvenKit)](https://github.com/WolvenKit/WolvenKit/releases/latest) | ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/WolvenKit/WolvenKit/check-only.yml) |
+
+To install the app quickly download `WolvenKitSetup-x.x.x.exe` and double click to run the installer.
+
+You can also simply download `WolvenKit-x.x.x.x.zip` and extract it to a location of your choice
+
+## Usage
+
+📑 Check out the wiki: https://wiki.redmodding.org/wolvenkit
+
+## Build instructions
+
+If you want to build the app from source yourself:
+
+1. Download and install [Visual Studio 2022 Community Edition](https://www.visualstudio.com/) or a higher version.
+2. Clone this repository.
+3. Open the solution (`All.sln`)
+4. Build the projects.
+
+## Contributing
+- Join the [Cyberpunk 2077 Modding Server](https://discord.gg/Epkq79kd96) for active development
+
+Do you want to contribute? Community feedback and contributions are highly appreciated!
+It's a good idea to create an issue when implementing a feature so people don't work on the same feature/issue in an asynchronous manner.
+
+**For general rules and guidelines see [CONTRIBUTING.md](/docs/CONTRIBUTING.md).**
 
 For any questions:
-- PM me on Discord: Traderain#3279 
-- Reach me at: hambalko.bence@gmail.com.
-- Discord: https://discord.gg/cp77modding
-- Our old discord for general chatting: https://discordapp.com/invite/tdSUQQe
-***
+Developer | Role | Email
+------------ | ------------- | -------------
+[spirit (sprt_)](https://github.com/notaspirit) | Project Lead / Core Development |
+[Traderain](https://github.com/Traderain) | Project Lead | [Email](mailto:hambalko.bence@gmail.com)
+
+## Screenshots
+
+![WK 8 6 Home Page Example](https://user-images.githubusercontent.com/65016231/172458777-d521aeaa-b2fb-43ef-a909-3786c1b8bf02.png)
+
+![WK 8 6 Editor Example](https://user-images.githubusercontent.com/65016231/172455912-e1d4fe29-9ab6-45a1-9e0c-17f2bb47c447.png)
+
+## Credits
+
+WolvenKit is a direct result of the hard work and continuous support, financial and otherwise, of the many researchers, programmers, artists, contributors, and companies that have helped with this project. Without their outstanding work and generous support, we never would have been able to create WolvenKit for Cyberpunk 2077. A very special thank you goes out to...
+
+<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.png" alt="JetBrains logo." height="64">
+
+- [JetBrains](https://www.jetbrains.com) who supplied open source licences for our developers
+- [Syncfusion](https://www.syncfusion.com/company/about-us) who supplied an open source licence for the WPF controls we use
+- [Ab3d PowerToys](https://www.ab4d.com/PowerToys.aspx)
+- [Ab3d DXEngine](https://www.ab4d.com/DXEngine.aspx)
+
+An ancestor to this tool was <a href="https://drive.google.com/file/d/0B3axqSlhNHOOYmpkWk83TXRkZmM/view">W3Edit</a>, initially developed by <a href="https://forums.cdprojektred.com/forum/en/the-witcher-series/the-witcher-3-wild-hunt/mod-discussions/58758-mod-editor">Sarcen</a> in 2015, around the time The Witcher 3 first came out. After Sarcen stopped working on it, a few of us picked it up and continued from there.
+
+- [Assimp](https://github.com/assimp/assimp-net)
+- [Zenhax](https://zenhax.com)
+- [Xentax](https://xentax.com)
+- [Lua Utils for W3](https://github.com/hhrhhr/Lua-utils-for-Witcher-3)
+- [TW3 Booster](https://github.com/gamebooster/witcher3-booster)
+- [TW3 Converter](https://bitbucket.org/jlouis/witcherconverter)
+- [VgmToolbox](https://sourceforge.net/projects/vgmtoolbox/)
+- [TW3 Mod Discussion](http://forums.cdprojektred.com/forum/en/the-witcher-series/the-witcher-3-wild-hunt/mod-discussions)
+- [Payday 2 Modding Information](https://bitbucket.org/zabb65/payday-2-modding-information)
+- [ModWorkshop](https://modworkshop.net/showthread.php?tid=101)
+- [W3 SaveGame Editor](https://github.com/Atvaark/W3SavegameEditor)
+- [ffmpeg](https://www.ffmpeg.org/)
+- [irrlicht](http://irrlicht.sourceforge.net/)
+
+## License
+
+***Copyright Disclaimer:*** Under Section 107 of the Copyright Act 1976, allowance is made for "fair use" for purposes such as criticism, comment, news reporting, teaching, scholarship, and research. Fair use is permitted by copyright statute that might otherwise be infringing. Non-profit, educational or personal use tips the balance in favor of fair use.. This project is solely made for research and in no way made to generate any revenue.

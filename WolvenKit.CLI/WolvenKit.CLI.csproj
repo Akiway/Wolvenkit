@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Platforms>x64</Platforms>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <VersionPrefix>8.20.1</VersionPrefix>
+    <VersionSuffix>$(VersionSuffix)</VersionSuffix>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <StartupObject>WolvenKit.CLI.Program</StartupObject>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Title>WolvenKit.CLI</Title>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>cp77tools</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>WolvenKit.CLI</PackageId>
+    <Company>WolvenKit</Company>
+    <Product>WolvenKit.CLI</Product>
+    <Description>Command line modding tool for Cyberpunk 2077.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/WolvenKit/WolvenKit</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/WolvenKit/WolvenKit</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>wolvenkit, cyberpunk2077</PackageTags>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="appsettings.json" />
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Remove="changelog.txt" />
+    <Content Include="changelog.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="System.CommandLine.Hosting" />
+
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\WolvenKit.Common\WolvenKit.Common.csproj" />
+    <ProjectReference Include="..\WolvenKit.Core\WolvenKit.Core.csproj" />
+    <ProjectReference Include="..\WolvenKit.Modkit\WolvenKit.Modkit.csproj" />
+  </ItemGroup>
+
+</Project>

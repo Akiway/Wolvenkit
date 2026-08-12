@@ -1,51 +1,122 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0-windows</TargetFrameworks>
-    <Platforms>AnyCPU;x64</Platforms>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Description>Core functionality for the WolvenKit Mod Editor.</Description>
-    <Authors>Hambalkó Bence, Moritz Baron</Authors>
+    <TargetFramework>net10.0</TargetFramework>
+    <Version>8.20.1</Version>
+    <Platforms>x64</Platforms>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>WolvenKit.Common</PackageId>
+    <Product>WolvenKit.Common</Product>
+    <Description>Common functions for the WolvenKit Mod Editor.</Description>
+
     <Company>WolvenKit</Company>
-    <PackageProjectUrl>https://github.com/WolvenKit/Wolven-kit</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/WolvenKit/Wolven-kit</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/WolvenKit/WolvenKit</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/WolvenKit/WolvenKit</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>wolvenkit</PackageTags>
-    <Version>1.0.3</Version>
+    <PackageTags>wolvenkit, cyberpunk2077</PackageTags>
+
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <NoWarn>NU5100;NU5104</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Extensions\PropertyGridEditors\**" />
     <Compile Remove="Model\Cr2w\**" />
+    <Compile Remove="RED3\**" />
+    <EmbeddedResource Remove="Extensions\PropertyGridEditors\**" />
     <EmbeddedResource Remove="Model\Cr2w\**" />
+    <EmbeddedResource Remove="RED3\**" />
+    <None Remove="Extensions\PropertyGridEditors\**" />
     <None Remove="Model\Cr2w\**" />
+    <None Remove="RED3\**" />
+    <None Remove="lib\texconv.dll" />
+    <None Remove="lib\texconv.pdb" />
+    <None Remove="Resources\basecruids.kark" />
+    <None Remove="Resources\missinghashes.txt" />
+    <None Remove="Resources\noderefs.kark" />
+    <None Remove="Resources\tweakdbstr.kark" />
+    <None Remove="Resources\tweakdbstr_add.kark" />
+    <None Remove="Resources\unusedhashes.kark" />
+    <None Remove="Resources\usedhashes.kark" />
+    <EmbeddedResource Include="Resources\basecruids.kark" />
+    <EmbeddedResource Include="Resources\missinghashes.json" />
+    <EmbeddedResource Include="Resources\noderefs.kark" />
+    <EmbeddedResource Include="Resources\usedhashes.kark" />
+    <EmbeddedResource Include="Resources\tweakdbstr.kark" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="DDS\texconv.exe" />
-    <None Remove="Resources\archivehashes.zip" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="texconv.exe">
+	<Content Include="lib\DirectXTexNet.dll">
+	  <PackagePath>contentFiles\any\any;content</PackagePath>
+	  <PackageCopyToOutput>true</PackageCopyToOutput>
+	</Content>
+	<Content Include="lib\texconv.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  <PackagePath>contentFiles\any\any\lib;content\lib</PackagePath>
+	  <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-    <EmbeddedResource Include="Resources\archivehashes.zip" />
+	<Content Include="lib\DirectXTexNetImpl.dll">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  <PackagePath>contentFiles\any\any\lib;content\lib</PackagePath>
+	  <PackageCopyToOutput>true</PackageCopyToOutput>
+	</Content>
+	<Content Include="lib\Ijwhost.dll">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  <PackagePath>contentFiles\any\any\lib;content\lib</PackagePath>
+	  <PackageCopyToOutput>true</PackageCopyToOutput>
+	</Content>
+	<Content Include="lib\COPYING">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  <PackagePath>contentFiles\any\any\lib;content\lib</PackagePath>
+	  <PackageCopyToOutput>true</PackageCopyToOutput>
+	</Content>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Catel.Analyzers" Version="1.1.0">
+    <PackageReference Include="DynamicData" />
+    <PackageReference Include="SharpDX.Direct3D11" />
+    <PackageReference Include="SharpDX.Mathematics" />
+    <PackageReference Include="SharpGLTF.Core" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Catel.Core" Version="5.12.11" />
-    <PackageReference Include="Catel.Fody" Version="4.5.0">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Catel.MVVM" Version="5.12.11" />
-    <PackageReference Include="CsvHelper" Version="16.0.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
-    <PackageReference Include="protobuf-net" Version="3.0.73" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
+  </ItemGroup>
+
+  <!--
+    NU1903: System.Net.Http / System.Text.RegularExpressions 4.3.0 (legacy netfx packages).
+    On net10.0 these APIs come from the shared framework; direct PackageReferences cause NU1510
+    (pruning). Suppress the advisories rather than reintroducing the old packages.
+  -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WolvenKit.RED4\WolvenKit.RED4.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="DirectXTexNet">
+      <HintPath>lib\DirectXTexNet.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Resources\tweakdb.str">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

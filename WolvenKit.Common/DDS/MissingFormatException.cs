@@ -1,19 +1,15 @@
-﻿using System;
+using System;
 using System.Runtime.Serialization;
 
 namespace WolvenKit.Common.DDS
 {
-    [Serializable]
     public class MissingFormatException : Exception
     {
+        #region Constructors
+
         public MissingFormatException(string message)
             : base(message)
         {
-        }
-
-        protected MissingFormatException(SerializationInfo serializationInfo, StreamingContext streamingContext)
-        {
-            throw new NotImplementedException();
         }
 
         public MissingFormatException()
@@ -23,5 +19,9 @@ namespace WolvenKit.Common.DDS
         public MissingFormatException(string message, Exception innerException) : base(message, innerException)
         {
         }
+
+        protected MissingFormatException(SerializationInfo serializationInfo, StreamingContext streamingContext) => throw new NotImplementedException();
+
+        #endregion Constructors
     }
 }

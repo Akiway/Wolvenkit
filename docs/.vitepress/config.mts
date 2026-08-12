@@ -1,0 +1,94 @@
+import { defineConfig } from 'vitepress'
+
+// https://vitepress.dev/reference/site-config
+export default defineConfig({
+  title: "WolvenKit Developer Documentation",
+  description: "Everything you need to know about contributing to the WolvenKit project.",
+  base: '/WolvenKit/',
+  ignoreDeadLinks: true,
+  head: [
+    ['link', { rel: 'icon', href: '/WolvenKit/favicon.ico' }]
+  ],
+  themeConfig: {
+    // https://vitepress.dev/reference/default-theme-config
+    nav: [
+      { text: 'Home', link: '/' }
+    ],
+
+    sidebar: [
+      {
+        text: 'Summary',
+        collapsed: false,
+        items: [
+          { text: 'Contributing', link: '/CONTRIBUTING' },
+          { text: 'Code of Conduct', link: '/CODE_OF_CONDUCT' },
+          { text: 'Developer Guide', link: '/DEVELOPER%20GUIDE' },
+        ]
+      },
+      {
+        text: 'Meta Documentation',
+        collapsed: false,
+        items: [
+          { text: 'Homepage', link: '/meta-documentation/home' },
+          { text: 'Contributing', link: '/meta-documentation/contributing' },
+        ]
+      },
+      {
+        text: 'Contributing',
+        collapsed: false,
+        items: [
+          { text: 'Homepage', link: '/contributing/home' },
+          { text: 'Pull Requests', link: '/contributing/pull-requests' },
+          { text: 'Keep a Changelog', link: '/contributing/keep-changelog' },
+        ]
+      },
+      {
+        text: 'Maintaining',
+        collapsed: false,
+        items: [
+          { text: 'Homepage', link: '/maintaining/home' },
+          { text: 'Reviewing Pull Requests', link: '/maintaining/pull-request-reviews' },
+          { text: 'Release Process', link: '/maintaining/release-process' },
+        ]
+      },
+      {
+        text: 'Code Documentation',
+        collapsed: false,
+        items: [
+          { text: 'Homepage', link: '/code-documentation/home' },
+            {
+                text: 'Subprojects',
+                collapsed: false,
+                items: [
+                    {
+                        text: 'WolvenKit.App',
+                        collapsed: true,
+                        items: [
+                            { text: 'Red Type Template Dropdown', link: '/code-documentation/Subprojects/WolvenKit.App/RedTypeTemplateDropdown' },
+                        ]
+                    },
+                    {
+                        text: 'WolvenKit.Common',
+                        collapsed: true,
+                        items: [
+                            { text: 'Red Type Template Service', link: '/code-documentation/Subprojects/WolvenKit.Common/RedTypeTemplateService' },
+                        ]
+                    }
+                ]
+            },
+            {
+                text: 'WolvenKit UI/UX Design',
+                collapsed: true,
+                items: [
+                    { text: 'Exposing Templates to the User', link: '/code-documentation/WolvenKitUIUXDesign/ExposingTemplatesToTheUser' },
+                ]
+            },
+        ]
+      }
+    ],
+
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/WolvenKit/WolvenKit' }
+    ]
+  }
+})

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Blender, SVG Export for Grease Pencil - v1.0 -->
+
+<svg
+   version="1.0"
+   x="0px"
+   y="0px"
+   width="1680px"
+   height="1680px"
+   viewBox="0 0 1680 1680"
+   id="svg12"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs16">
+    <linearGradient
+       id="linearGradient4643">
+      <stop
+         style="stop-color:#dedede;stop-opacity:1"
+         offset="0"
+         id="stop4639" />
+      <stop
+         style="stop-color:#aa87de;stop-opacity:1"
+         offset="1"
+         id="stop4641" />
+    </linearGradient>
+    <radialGradient
+       xlink:href="#linearGradient4643"
+       id="radialGradient4645"
+       cx="1331.8838"
+       cy="840"
+       fx="1331.8838"
+       fy="840"
+       r="840"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <g
+     id="blender_frame_4">
+    <circle
+       style="fill:url(#radialGradient4645);stroke:none;stroke-width:3;fill-opacity:1"
+       id="path4491"
+       cx="840"
+       cy="840"
+       r="840" />
+  </g>
+</svg>

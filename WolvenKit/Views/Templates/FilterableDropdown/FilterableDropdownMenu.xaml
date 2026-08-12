@@ -1,0 +1,117 @@
+<UserControl
+    x:Class="WolvenKit.Views.Editors.FilterableDropdownMenu"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="clr-namespace:WolvenKit.Functionality.Helpers"
+    xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+    FocusManager.FocusedElement="{Binding ElementName=filterTextBox}"
+    DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <Grid>
+        <Grid.Resources>
+            <ResourceDictionary>
+                <Style
+                    BasedOn="{StaticResource {x:Type Grid}}"
+                    TargetType="{x:Type Grid}">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style
+                    BasedOn="{StaticResource WolvenkitDialogLabelStyleMedium}"
+                    TargetType="{x:Type Label}">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                </Style>
+            </ResourceDictionary>
+
+        </Grid.Resources>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{DynamicResource WolvenKitDialogLabelColumnWidthMedium}">
+                <ColumnDefinition.Style>
+                    <Style TargetType="ColumnDefinition">
+                        <Style.Triggers>
+                            <DataTrigger
+                                Binding="{Binding IsShowLabel}"
+                                Value="False">
+                                <Setter Property="Width" Value="0" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ColumnDefinition.Style>
+            </ColumnDefinition>
+
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition MinHeight="{DynamicResource WolvenKitRedEditorRowMinHeight}" />
+            <RowDefinition x:Name="dropdownRow">
+                <RowDefinition.Style>
+                    <Style TargetType="RowDefinition">
+                        <Setter Property="MinHeight" Value="{DynamicResource WolvenKitRedEditorRowMinHeight}" />
+                        <Style.Triggers>
+                            <DataTrigger
+                                Binding="{Binding IsInline}"
+                                Value="True">
+                                <Setter Property="Height" Value="0" />
+                                <Setter Property="MinHeight" Value="0" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </RowDefinition.Style>
+            </RowDefinition>
+        </Grid.RowDefinitions>
+
+        <!-- ============================================================================ -->
+        <!-- Label - visibility determined by column via IsShowLabel property -->
+        <!-- ============================================================================ -->
+        <Label
+            Grid.Row="0"
+            Grid.Column="0"
+            Width="{StaticResource WolvenKitLabelWidthMedium}"
+            HorizontalAlignment="Left"
+            BorderThickness="0"
+            Foreground="White"
+            FontSize="{DynamicResource WolvenKitFontSubTitle}"
+            Content="{Binding Label}" />
+
+        <!-- ============================================================================ -->
+        <!-- Filter textbox - row, col and colspan are toggled in OnPropertyChanged -->
+        <!-- ============================================================================ -->
+        <syncfusion:SfTextBoxExt
+            x:Name="filterTextBox"
+            Grid.Row="0"
+            Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Margin="0,0,1,1"
+            VerticalContentAlignment="Center"
+            Background="{DynamicResource ContentBackgroundAlt2}"
+            FontSize="{DynamicResource WolvenKitFontSubTitle}"
+            helpers:TextBoxBehavior.TripleClickSelectAll="True"
+            KeyboardNavigation.TabIndex="-1"
+            Watermark="Filter"
+            WatermarkTemplate="{StaticResource PlaceholderTemplate}"
+            Text="{Binding FilterText,
+                           UpdateSourceTrigger=PropertyChanged}" />
+
+        <!-- ============================================================================ -->
+        <!-- Dropdown menu - row, col and colspan are toggled in OnPropertyChanged -->
+        <!-- ============================================================================ -->
+        <ComboBox
+            x:Name="dropdown"
+            Grid.Row="1"
+            Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Width="Auto"
+            MinWidth="{DynamicResource WolvenkitControlMinWidth}"
+            MaxWidth="1000"
+            Background="{DynamicResource BackgroundColor_Control}"
+            FontSize="{DynamicResource WolvenKitFontSubTitle}"
+            ItemsSource="{Binding FilteredOptions,
+                                  Mode=OneWay}"
+            KeyboardNavigation.TabIndex="-1"
+            SelectedValuePath="Value"
+            DisplayMemberPath="Key"
+            SelectedValue="{Binding SelectedOption}" />
+    </Grid>
+</UserControl>

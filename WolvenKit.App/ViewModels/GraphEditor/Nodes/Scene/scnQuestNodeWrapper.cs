@@ -1,0 +1,439 @@
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Windows.Media;
+using Splat;
+using WolvenKit.App.Extensions;
+using WolvenKit.App.ViewModels.Documents;
+using WolvenKit.App.ViewModels.GraphEditor.Nodes;
+using WolvenKit.App.ViewModels.GraphEditor.Nodes.Scene.Internal;
+using WolvenKit.Core.Interfaces;
+using WolvenKit.RED4.Types;
+using WolvenKit.App.ViewModels.GraphEditor.Nodes.Quest;
+using WolvenKit.App.ViewModels.GraphEditor.Nodes.Quest.Internal;
+
+namespace WolvenKit.App.ViewModels.GraphEditor.Nodes.Scene;
+
+public class scnQuestNodeWrapper : BaseSceneViewModel<scnQuestNode>
+{
+    private readonly scnSceneResource _sceneResource;
+    private Enums.questUseWorkspotNodeFunctions? _lastUseWorkspotFunction;
+    private bool _removeWorkStartedWhenDisconnected;
+    
+    public scnQuestNodeWrapper(scnQuestNode scnSceneGraphNode, scnSceneResource scnSceneResource) : base(scnSceneGraphNode)
+    {
+        _sceneResource = scnSceneResource;
+        _lastUseWorkspotFunction = GetUseWorkspotFunction();
+        if (_castedData.QuestNode != null)
+        {
+            //_castedData.QuestNode.PropertyChanged += QuestNodeOnPropertyChanged;
+        }
+
+        // Override title and background to show the actual quest node type
+        if (_castedData.QuestNode?.Chunk != null)
+        {
+            var questNodeType = NodeProperties.GetNameFromClass(_castedData.QuestNode.Chunk);
+            
+            if (_castedData.QuestNode.Chunk is questVehicleNodeDefinition vehicleNode &&
+                vehicleNode.Type?.Chunk is questSetImmovable_NodeType)
+            {
+                Title = "Immovable Vehicle";
+            }
+            else
+            {
+                Title = questNodeType;
+            }
+            
+            Background = GraphNodeStyling.GetBackgroundForQuestNodeType(_castedData.QuestNode.Chunk);
+            ContentBackground = GraphNodeStyling.GetContentBackgroundForQuestNodeType(_castedData.QuestNode.Chunk);
+        }
+        else
+        {
+            Title = "Quest";
+        }
+
+        // Populate details using the same semantic pipeline as quest graph nodes
+        // This avoids mixing old-style details with the new semantic formatting
+        RefreshDetails();
+
+        Title += NodeProperties.SetNameFromNotablePoints(scnSceneGraphNode.NodeId.Id, scnSceneResource);
+    }
+
+    internal override void GenerateSockets()
+    {
+        // Generate input sockets dynamically from the IsockMappings
+        for (ushort i = 0; i < _castedData.IsockMappings.Count; i++)
+        {
+            var mappingName = _castedData.IsockMappings[i].GetResolvedText();
+            if (string.IsNullOrEmpty(mappingName))
+            {
+                // Fallback for empty mappings
+                mappingName = $"Input_{i}";
+            }
+
+            // The NameId for quest nodes is always 0, the ordinal 'i' is the index into the mapping array.
+            var input = new SceneInputConnectorViewModel(mappingName, mappingName, UniqueId, 0, i);
+            input.Subtitle = $"(0,{i})";
+            Input.Add(input);
+        }
+
+        for (var i = 0; i < _castedData.OutputSockets.Count; i++)
+        {
+            var socket = _castedData.OutputSockets[i];
+            string name;
+            
+            // Check if there's a mapping label for this output
+            if (_castedData.OsockMappings.Count > i)
+            {
+                var mappingText = _castedData.OsockMappings[i].GetResolvedText();
+                if (!string.IsNullOrEmpty(mappingText))
+                {
+                    // Use just the mapping label
+                    name = mappingText;
+                }
+                else
+                {
+                    // Fallback if mapping is empty
+                    name = _castedData.OutputSockets.Count == 1 ? "Out" : $"Out_{i}";
+                }
+            }
+            else
+            {
+                // No mapping - use simple naming
+                name = _castedData.OutputSockets.Count == 1 ? "Out" : $"Out_{i}";
+            }
+
+            var nameAndTitle = $"({socket.Stamp.Name},{socket.Stamp.Ordinal})";
+            var output = new SceneOutputConnectorViewModel(nameAndTitle, nameAndTitle, UniqueId, socket.Stamp.Name, socket.Stamp.Ordinal, socket);
+            output.Subtitle = name;
+            Output.Add(output);
+        }
+    }
+
+    protected override void DataOnPropertyChanging(object? sender, PropertyChangingEventArgs e)
+    {
+        base.DataOnPropertyChanging(sender, e);
+
+        if (e.PropertyName == nameof(scnQuestNode.QuestNode))
+        {
+            if (_castedData.QuestNode != null)
+            {
+                //_castedData.QuestNode.PropertyChanged -= QuestNodeOnPropertyChanged;
+            }
+        }
+    }
+
+    protected override void DataOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        base.DataOnPropertyChanged(sender, e);
+
+        if (e.PropertyName == nameof(scnQuestNode.QuestNode))
+        {
+            if (_castedData.QuestNode != null)
+            {
+                //_castedData.QuestNode.PropertyChanged += QuestNodeOnPropertyChanged;
+            }
+        }
+    }
+
+    private void QuestNodeOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_castedData.QuestNode.Chunk == null || _castedData.QuestNode.Chunk.Id == (ushort)_castedData.NodeId.Id)
+        {
+            return;
+        }
+
+        _castedData.QuestNode.Chunk.Id = (ushort)_castedData.NodeId.Id;
+        _castedData.QuestNode.Chunk.Sockets ??= new CArray<CHandle<graphGraphSocketDefinition>>();
+        _castedData.QuestNode.Chunk.Sockets.Add(new questSocketDefinition { Name = "CutDestination", Type = Enums.questSocketType.CutDestination });
+        _castedData.QuestNode.Chunk.Sockets.Add(new questSocketDefinition { Name = "In", Type = Enums.questSocketType.Input });
+        _castedData.QuestNode.Chunk.Sockets.Add(new questSocketDefinition { Name = "Out", Type = Enums.questSocketType.Output });
+    }
+
+    /// <summary>
+    /// Override to handle quest node details properly for scene quest nodes
+    /// </summary>
+    public override void RefreshDetails()
+    {
+        var loggerService = Locator.Current.GetService<ILoggerService>();
+        
+        try
+        {
+            // Create a new Details dictionary to trigger UI updates
+            var tempDetails = new Dictionary<string, string>();
+            
+            scnSceneResource? sceneResource = _sceneResource;
+
+            // Get details from the nested quest node
+            if (_castedData.QuestNode?.Chunk != null)
+            {
+                // Check if this is a condition node that should use semantic formatting
+                questIBaseCondition? condition = null;
+                
+                if (_castedData.QuestNode.Chunk is questPauseConditionNodeDefinition pauseCondition)
+                {
+                    condition = pauseCondition.Condition?.Chunk;
+                }
+                else if (_castedData.QuestNode.Chunk is questConditionNodeDefinition conditionNode)
+                {
+                    condition = conditionNode.Condition?.Chunk;
+                }
+                
+                if (condition != null)
+                {
+                    var semanticDetails = QuestConditionHelper.GetSemanticConditionDisplay(condition);
+
+                    // Fallback to legacy details when semantic output is generic/placeholder
+                    var hasCond = semanticDetails.TryGetValue("Condition", out var condText);
+                    var isGeneric = !hasCond || string.IsNullOrWhiteSpace(condText) || condText.TrimEnd().EndsWith(" condition");
+
+                    if (!isGeneric)
+                    {
+                        foreach (var kvp in semanticDetails)
+                        {
+                            tempDetails[kvp.Key] = kvp.Value;
+                        }
+                    }
+                    else
+                    {
+                        // Use the full node property discovery, which also reflects nested condition fields
+                        var legacy = NodeProperties.GetPropertiesFor(_castedData.QuestNode.Chunk, sceneResource);
+                        foreach (var kvp in legacy)
+                        {
+                            if (kvp.Key != "Type")
+                            {
+                                tempDetails[kvp.Key] = kvp.Value;
+                            }
+                        }
+                    }
+                }
+                else if (_castedData.QuestNode.Chunk is questCheckpointNodeDefinition checkpointNode)
+                {
+                    tempDetails["Debug String"] = checkpointNode.DebugString;
+                    
+                    var questNodeDetails = NodeProperties.GetPropertiesFor(_castedData.QuestNode.Chunk, sceneResource);
+                    foreach (var kvp in questNodeDetails)
+                    {
+                        if (kvp.Key != "Type")
+                        {
+                            tempDetails[kvp.Key] = kvp.Value;
+                        }
+                    }
+                }
+                else
+                {
+                    var questNodeDetails = NodeProperties.GetPropertiesFor(_castedData.QuestNode.Chunk, sceneResource);
+                    foreach (var kvp in questNodeDetails)
+                    {
+                        if (kvp.Key != "Type")
+                        {
+                            tempDetails[kvp.Key] = kvp.Value;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // For nodes without a quest node, we don't show type since it would just be generic "Quest"
+                // The title already indicates it's a Quest node
+            }
+            
+            // Set the new details dictionary to trigger UI update
+            Details = tempDetails;
+            
+            // Also refresh the title
+            UpdateTitle();
+            OnPropertyChanged(nameof(Title));
+            
+            // Re-detect player node status in case the quest node changed
+            if (_castedData.QuestNode?.Chunk != null)
+            {
+                DetectPlayerNodeFromQuestNode(_castedData.QuestNode.Chunk);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            loggerService?.Error($"Error refreshing scnQuestNode {UniqueId} details: {ex.Message}");
+            Details = new Dictionary<string, string> { ["Error"] = "Failed to refresh details" };
+        }
+    }
+
+    /// <summary>
+    /// Override to update title properly for scene quest nodes
+    /// </summary>
+    protected override void UpdateTitle()
+    {
+        try
+        {
+            if (_castedData.QuestNode?.Chunk != null)
+            {
+                var questNodeType = NodeProperties.GetNameFromClass(_castedData.QuestNode.Chunk);
+                
+                if (_castedData.QuestNode.Chunk is questVehicleNodeDefinition vehicleNode &&
+                    vehicleNode.Type?.Chunk is questSetImmovable_NodeType)
+                {
+                    Title = "Vehicle (Immovable)";
+                }
+                else
+                {
+                    Title = questNodeType;
+                }
+            }
+            else
+            {
+                Title = "Quest";
+            }
+
+            // Notable point suffix is now handled by base class
+        }
+        catch (System.Exception ex)
+        {
+            var loggerService = Locator.Current.GetService<ILoggerService>();
+            loggerService?.Error($"Error updating scnQuestNode {UniqueId} title: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Re-detect player node status from the nested quest node
+    /// </summary>
+    private void DetectPlayerNodeFromQuestNode(questNodeDefinition questNode)
+    {
+        try
+        {
+            // Use the protected method from base class to check for player node indicators
+            IsPlayerNode = CheckForPlayerNodeRecursively(questNode);
+            
+            // Notify UI of changes
+            OnPropertyChanged(nameof(IsPlayerNode));
+        }
+        catch (System.Exception)
+        {
+            // If detection fails, assume it's not a player node
+            IsPlayerNode = false;
+            
+            OnPropertyChanged(nameof(IsPlayerNode));
+        }
+    }
+
+    /// <summary>
+    /// Override RefreshFromData to avoid regenerating sockets unnecessarily
+    /// </summary>
+    public override void RefreshFromData()
+    {
+        SynchronizeUseWorkspotSockets();
+
+        // Update title
+        UpdateTitle();
+        OnPropertyChanged(nameof(Title));
+        
+        // Refresh details but DON'T regenerate sockets (this prevents duplication)
+        // Sockets should only be regenerated when the socket structure actually changes
+        RefreshDetails();
+    }
+
+    private Enums.questUseWorkspotNodeFunctions? GetUseWorkspotFunction()
+    {
+        if (_castedData.QuestNode?.Chunk is questUseWorkspotNodeDefinition useWorkspotNode)
+        {
+            return questUseWorkspotNodeDefinitionWrapper.GetWorkspotFunction(useWorkspotNode);
+        }
+
+        return null;
+    }
+
+    private void SynchronizeUseWorkspotSockets()
+    {
+        if (_castedData.QuestNode?.Chunk is not questUseWorkspotNodeDefinition)
+        {
+            return;
+        }
+
+        var function = GetUseWorkspotFunction();
+        var functionChanged = function != _lastUseWorkspotFunction;
+        if (!functionChanged && !_removeWorkStartedWhenDisconnected)
+        {
+            return;
+        }
+
+        _lastUseWorkspotFunction = function;
+        var shouldHaveWorkStarted = function == Enums.questUseWorkspotNodeFunctions.UseWorkspot;
+        var mappingIndex = GetOutputMappingIndex("Work Started");
+
+        if (shouldHaveWorkStarted)
+        {
+            _removeWorkStartedWhenDisconnected = false;
+            if (mappingIndex < 0)
+            {
+                AddWorkStartedSocket();
+            }
+            return;
+        }
+
+        if (mappingIndex < 0)
+        {
+            _removeWorkStartedWhenDisconnected = false;
+            return;
+        }
+
+        var socket = mappingIndex < _castedData.OutputSockets.Count
+            ? _castedData.OutputSockets[mappingIndex]
+            : null;
+        var connector = Output
+            .OfType<SceneOutputConnectorViewModel>()
+            .FirstOrDefault(x => x.Subtitle == "Work Started");
+
+        if ((socket?.Destinations.Count ?? 0) > 0 || connector?.IsConnected == true)
+        {
+            _removeWorkStartedWhenDisconnected = true;
+            return;
+        }
+
+        _removeWorkStartedWhenDisconnected = false;
+        if (connector != null)
+        {
+            Output.Remove(connector);
+        }
+        if (mappingIndex < _castedData.OutputSockets.Count)
+        {
+            _castedData.OutputSockets.RemoveAt(mappingIndex);
+        }
+        _castedData.OsockMappings.RemoveAt(mappingIndex);
+        NotifySocketsChanged();
+    }
+
+    private int GetOutputMappingIndex(string name)
+    {
+        for (var i = 0; i < _castedData.OsockMappings.Count; i++)
+        {
+            if (_castedData.OsockMappings[i].GetResolvedText() == name)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private void AddWorkStartedSocket()
+    {
+        var socket = new scnOutputSocket
+        {
+            Stamp = new scnOutputSocketStamp { Name = 0, Ordinal = 1 }
+        };
+        _castedData.OsockMappings.Add("Work Started");
+        _castedData.OutputSockets.Add(socket);
+
+        var nameAndTitle = $"({socket.Stamp.Name},{socket.Stamp.Ordinal})";
+        Output.Add(new SceneOutputConnectorViewModel(
+            nameAndTitle,
+            nameAndTitle,
+            UniqueId,
+            socket.Stamp.Name,
+            socket.Stamp.Ordinal,
+            socket)
+        {
+            Subtitle = "Work Started"
+        });
+        NotifySocketsChanged();
+    }
+}

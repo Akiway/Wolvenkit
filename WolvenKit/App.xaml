@@ -1,29 +1,266 @@
-﻿<Application x:Class="WolvenKit.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
-             xmlns:hc="https://handyorg.github.io/handycontrol">
+<Application
+    x:Class="WolvenKit.AppImpl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:documents="clr-namespace:WolvenKit.Views.Documents"
+    xmlns:docvm="clr-namespace:WolvenKit.App.ViewModels.Documents;assembly=WolvenKit.App"
+    xmlns:exporters="clr-namespace:WolvenKit.Views.Exporters"
+    xmlns:exportvms="clr-namespace:WolvenKit.App.ViewModels.Exporters;assembly=WolvenKit.App"
+    xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+    xmlns:importers="clr-namespace:WolvenKit.Views.Importers"
+    xmlns:importvms="clr-namespace:WolvenKit.App.ViewModels.Importers;assembly=WolvenKit.App"
+    xmlns:o="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
+    xmlns:tools="clr-namespace:WolvenKit.Views.Tools"
+    xmlns:toolvm="clr-namespace:WolvenKit.App.ViewModels.Tools;assembly=WolvenKit.App">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary>
+                    <DataTemplate DataType="{x:Type toolvm:LogViewModel}">
+                        <Grid>
+                            <tools:LogView />
+                        </Grid>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type toolvm:PropertiesViewModel}">
+                        <Grid>
+                            <tools:PropertiesView />
+                        </Grid>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type toolvm:ProjectExplorerViewModel}">
+                        <Grid>
+                            <tools:ProjectExplorerView />
+                        </Grid>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type toolvm:AssetBrowserViewModel}">
+                        <Grid>
+                            <tools:AssetBrowserView />
+                        </Grid>
+                    </DataTemplate>
+
+                    <DataTemplate DataType="{x:Type importvms:ImportViewModel}">
+                        <Grid>
+                            <importers:ImportView />
+                        </Grid>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type exportvms:ExportViewModel}">
+                        <Grid>
+                            <exporters:ExportView />
+                        </Grid>
+                    </DataTemplate>
+
+
+                    <DataTemplate DataType="{x:Type toolvm:TweakBrowserViewModel}">
+                        <Grid>
+                            <tools:TweakBrowserView />
+                        </Grid>
+                    </DataTemplate>
+
+                    <DataTemplate DataType="{x:Type toolvm:LocKeyBrowserViewModel}">
+                        <Grid>
+                            <tools:LocKeyBrowserView />
+                        </Grid>
+                    </DataTemplate>
+
+
+                    <DataTemplate DataType="{x:Type docvm:RedDocumentViewModel}">
+                        <Grid>
+                            <documents:RedDocumentView />
+                        </Grid>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type docvm:WScriptDocumentViewModel}">
+                        <Grid>
+                            <documents:WScriptDocumentView />
+                        </Grid>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type toolvm:HashToolViewModel}">
+                        <Grid>
+                            <tools:HashToolView />
+                        </Grid>
+                    </DataTemplate>
+
+                </ResourceDictionary>
+
+                <!-- Global Styles -->
+                <ResourceDictionary>
+                    <Style
+                        x:Key="SidePanelContainerBorderStyle"
+                        TargetType="Border">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray.SemiTransparent}" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="DockPanel.Dock" Value="Right" />
+                        <Setter Property="Margin" Value="0,16,20,-106" />
+                        <Setter Property="Padding" Value="16,10,6,16" />
+                    </Style>
+                </ResourceDictionary>
+
+                <!-- Converters -->
+                <ResourceDictionary>
+                    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+                </ResourceDictionary>
+
+                <!-- Scene Editor converters - needed globally for cache service -->
+                <ResourceDictionary Source="Resources/Converters/SceneEditorConverters.xaml" />
+
+                <!-- Resource Dictionaries -->
+                <ResourceDictionary Source="pack://application:,,,/WolvenKit;Component/Themes/App.Icons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/WolvenKit;Component/Themes/App.Styles.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/WolvenKit;Component/Themes/App.Sizes.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Crimson.xaml" />
 
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/AdonisUI;component/ColorSchemes/Dark.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/AdonisUI.ClassicTheme;component/Resources.xaml" />
+
                 <!-- Theme setting -->
-                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml" />
-                <hc:ThemeResources/>
-                <hc:Theme/>
+                <hc:ThemeResources RequestedTheme="Dark" />
+                <hc:Theme />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/WizardControl/WizardControl.xaml" />
 
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfTextInputLayout/SfTextInputLayout.xaml" />
 
-                <ResourceDictionary Source="pack://application:,,,/Fluent;Component/Themes/Generic.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/Fluent;component/Themes/Themes/Dark.Red.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/Fluent;component/Themes/Themes/Dark.Blue.xaml"      />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfTextBoxExt/SfTextBoxExt.xaml" />
 
-                <ResourceDictionary Source="pack://application:,,,/Fluent;component/Themes/Themes/Dark.Red.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/Resources/Styles/CustomHandyStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfDataGrid/SfDataGrid.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfImageEditor/SfImageEditor.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/GroupBar/GroupBar.xaml" />
 
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfTreeGrid/SfTreeGrid.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfTreeNavigator/SfTreeNavigator.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfNavigationDrawer/SfNavigationDrawer.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/HierarchyNavigator/HierarchyNavigator.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfAccordion/SfAccordion.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/PropertyGrid/PropertyGrid.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/Ribbon/Ribbon.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfRadialMenu/SfRadialMenu.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/DockingManager/DockingManager.xaml" />
+
+                <!--<ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/EditControl/EditControl.xaml" />-->
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfRichTextBoxAdv/SfRichTextBoxAdv.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/SfHubTile/SfHubTile.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.MaterialDark.WPF;Component/CardView/CardView.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Resources/Styles/CustomHandyStyles.xaml" />
+
+                <!-- SfTextBoxExt, common placeholder style -->
+                <ResourceDictionary>
+                    <DataTemplate x:Key="PlaceholderTemplate">
+                        <TextBlock
+                            Padding="3,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="{DynamicResource WolvenKitFontSubTitle}"
+                            Text="{Binding}" />
+                    </DataTemplate>
+                </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
 
-            <SolidColorBrush x:Key="AccentColorBrush" Color="#D24726" />
+            <!-- Default texts -->
+            <Style TargetType="{x:Type TextBlock}">
+                <Setter Property="Foreground" Value="{StaticResource ForegroundColor}" />
+            </Style>
+
+            <!-- Don't override TextBlock of ToolTip -->
+            <Style
+                x:Key="{x:Type ToolTip}"
+                BasedOn="{StaticResource WPFToolTipStyle}"
+                TargetType="{x:Type ToolTip}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ToolTip}">
+                            <Border
+                                Margin="0"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource MaterialDark.ThemeCornerRadiusVariant1}"
+                                SnapsToDevicePixels="True"
+                                Effect="{StaticResource Default.ShadowDepth3}">
+                                <ContentPresenter
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                    <ContentPresenter.Resources>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="Foreground" Value="Black" />
+                                        </Style>
+                                    </ContentPresenter.Resources>
+                                </ContentPresenter>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- See https://help.syncfusion.com/wpf/autocomplete/textbox-customization -->
+            <Style TargetType="{x:Type syncfusion:SfTextBoxExt}">
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+            </Style>
+
+            <Style
+                x:Key="MessageBoxPrimaryButtonStyle"
+                BasedOn="{StaticResource {x:Type Button}}"
+                TargetType="{x:Type Button}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Margin" Value="5,0" />
+                <Setter Property="MinWidth" Value="88" />
+                <Setter Property="Visibility" Value="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            </Style>
+
+            <DrawingBrush
+                x:Key="CloudDrawingBrush"
+                o:Freeze="True"
+                Opacity=".1"
+                RenderOptions.CacheInvalidationThresholdMaximum="2.0"
+                RenderOptions.CacheInvalidationThresholdMinimum="0.5"
+                RenderOptions.CachingHint="Cache"
+                Stretch="Uniform"
+                TileMode="Tile"
+                Viewport="0,0,157,157"
+                ViewportUnits="Absolute">
+                <DrawingBrush.Drawing>
+                    <ImageDrawing
+                        o:Freeze="True"
+                        ImageSource="pack://application:,,,/Resources/Media/Images/Application/Cloud.png"
+                        Rect="0,0,157,157" />
+                </DrawingBrush.Drawing>
+            </DrawingBrush>
+
+            <Geometry x:Key="HomeIcon">M 16,8.41421L 11.5,3.91421L 4.41421,11L 6,11L 6,12L 6,19L 9,19L 9,13L 14,13L 14,19L 17,19L 17,11L 18.5858,11L 17,9.41421L 17,6.00001L 16,6.00001L 16,8.41421 Z M 2,12L 11.5,2.50001L 15,6L 15,5L 18,5L 18,9L 21,12L 18,12L 17.9993,19.9983L 12.9993,19.9983L 12.9993,13.9983L 9.99939,13.998L 9.99939,19.998L 4.99939,19.998L 4.99939,12L 2,12 Z</Geometry>
+
+            <SolidColorBrush x:Key="AccentColorBrush" Color="Black" />
+
+            <ControlTemplate x:Key="ValidationErrorTemplate">
+                <StackPanel>
+                    <AdornedElementPlaceholder x:Name="textBox" />
+                    <TextBlock
+                        x:Name="ValidationText"
+                        MaxWidth="{Binding ActualWidth,
+                                           RelativeSource={RelativeSource TemplatedParent}}"
+                        Margin="150,0,60,0"
+                        Padding="4"
+                        Background="DarkRed"
+                        FontSize="12"
+                        Visibility="Visible"
+                        Text="{Binding ElementName=textBox,
+                                       Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ControlTemplate>
+
+            <Style
+                BasedOn="{StaticResource SyncfusionWizardNavigationAreaStyle}"
+                TargetType="{x:Type syncfusion:WizardNavigationArea}">
+                <Setter Property="MinHeight" Value="{DynamicResource WolvenKitWizardNavBarMinHeight}" />
+                <Setter Property="Padding" Value="{DynamicResource WolvenKitMarginSmallVertical}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

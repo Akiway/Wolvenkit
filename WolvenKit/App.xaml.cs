@@ -1,221 +1,375 @@
-﻿using Catel.IoC;
-using Catel.Logging;
-using Catel.Reflection;
-using Catel.Windows;
-using Orc.Squirrel;
-using Orchestra.Services;
-using Orchestra.Views;
-using System.Windows;
-using WolvenKit.Views;
-using Catel.MVVM;
 using System;
 using System.Diagnostics;
-using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
 using System.Threading;
-using WolvenKit.ViewModels;
-using WolvenKit.Views.Dialogs;
-using NodeNetwork;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
-using MLib.Interfaces;
-using HandyControl.Controls.SplashWindow;
+using DynamicData.Binding;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using ReactiveUI;
+using Serilog;
+using Splat;
+using Splat.Microsoft.Extensions.DependencyInjection;
+using Syncfusion.SfSkinManager;
+using Syncfusion.Themes.MaterialDark.WPF;
+using WolvenKit.App;
+using WolvenKit.App.Helpers;
+using WolvenKit.App.Interaction;
+using WolvenKit.App.Services;
+using WolvenKit.Common.Services;
+using WolvenKit.Core.Compression;
+using WolvenKit.Core.Exceptions;
+using WolvenKit.Core.Interfaces;
+using WolvenKit.Helpers;
+using WolvenKit.RED4.CR2W;
+using WolvenKit.Views.Dialogs.Windows;
 
 namespace WolvenKit
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
-    public partial class App : Application
+    public partial class AppImpl //: Application
     {
-        #region fields
-        #endregion fields
+        // Determines if the application is in design mode.
+        //public static bool IsInDesignMode => !(Current is App) || (bool)DesignerProperties.IsInDesignModeProperty.GetMetadata(typeof(DependencyObject)).DefaultValue;
 
-        #region constructors
-        static App()
-        {
+        private ISettingsManager _settingsManager;
+        private ILoggerService _loggerService;
 
-
-         
-
-
-
-        }
-
-        /// <summary>
-        /// Class constructor
-        /// </summary>
-        public App()
+        // Constructor #1
+        static AppImpl()
         {
 
         }
-        #endregion constructors
 
-
-
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
-
-        protected override async void OnStartup(StartupEventArgs e)
+        // Constructor #2
+        public AppImpl()
         {
-#if DEBUG
-            LogManager.AddDebugListener();
-#endif
-            Log.Info("Starting application");
+            Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 
-            var uri = new Uri("pack://application:,,,/WolvenKit.Resources;component/Resources/Images/git.png");
+            Init();
 
-            await SquirrelHelper.HandleSquirrelAutomaticallyAsync();
+            SetupExceptionHandling();
 
-
-            var serviceLocator = ServiceLocator.Default;
-
-
-            // Register Viewmodels
-            var viewModelLocator = ServiceLocator.Default.ResolveType<IViewModelLocator>();
-            viewModelLocator.NamingConventions.Add("WolvenKit.ViewModels");
-
-            //TODO: rename later to MainViewModel
-
-
-
-            // ---- HeadCategory : ProjectView
-            //-- Category : ProjectView
-            viewModelLocator.Register(typeof(Views.MainView), typeof(ViewModels.WorkSpaceViewModel));
-
-            //-- Category : AssetBrowser
-            viewModelLocator.Register(typeof(Views.AssetBrowser.AssetBrowserView), typeof(ViewModels.AssetBrowser.AssetBrowserViewModel));
-
-            //-- Category : CodeEditor
-            viewModelLocator.Register(typeof(Views.CodeEditor.CodeEditorView), typeof(ViewModels.CodeEditor.CodeEditorViewModel));
-
-            //-- Category : PluginManager
-            viewModelLocator.Register(typeof(Views.PluginManager.PluginManagerView), typeof(ViewModels.PluginManager.PluginManagerViewModel));
-
-            //-- Category : VisualEditor
-            viewModelLocator.Register(typeof(Views.VisualEditor.VisualEditorView), typeof(ViewModels.VisualEditor.VisualEditorViewModel));
-
-
-
-            // ---- HeadCategory : FluentBackstage
-            //-- Category : Backstage
-            viewModelLocator.Register(typeof(Views.OpenFileView), typeof(ViewModels.OpenFileViewModel));
-            viewModelLocator.Register(typeof(Views.RecentlyUsedItemsView), typeof(ViewModels.RecentlyUsedItemsViewModel));
-
-            //-- Category : Homepage 
-            viewModelLocator.Register(typeof(Views.HomePage.HomePageView), typeof(ViewModels.HomePage.HomePageViewModel));
-            viewModelLocator.Register(typeof(Views.HomePage.TopicView), typeof(ViewModels.HomePage.TopicViewModel));
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.AboutPageView), typeof(ViewModels.HomePage.Pages.AboutPageViewModel));
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.GithubPageView), typeof(ViewModels.HomePage.Pages.GithubPageViewModel));
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.RecentProjectView), typeof(ViewModels.HomePage.Pages.RecentProjectViewModel));           
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.WikiPageView), typeof(ViewModels.HomePage.Pages.WikiPageViewModel));
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.WelcomePageView), typeof(ViewModels.HomePage.Pages.WelcomePageViewModel));
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.WebsitePageView), typeof(ViewModels.HomePage.Pages.WebsitePageViewModel));
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.SettingsPageView), typeof(ViewModels.HomePage.Pages.SettingsPageViewModel));
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.UserPageView), typeof(ViewModels.HomePage.Pages.UserPageViewModel));
-
-
-            //-- Category : Integrated Tools
-            viewModelLocator.Register(typeof(Views.HomePage.Pages.IntegratedToolsPageView), typeof(ViewModels.HomePage.Pages.IntegratedToolsPageViewModel));
-            viewModelLocator.Register(typeof(Views.IntegratedToolsPages.CyberCAT.CyberCATPageView), typeof(ViewModels.IntegratedToolsPages.CyberCAT.CyberCATPageViewModel));
-
-
-
-            //-- Category : Settings Pages 
-            viewModelLocator.Register(typeof(Views.SettingsPages.GeneralSettingsView), typeof(ViewModels.SettingsPages.GeneralSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.General.GlobalSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.General.GlobalSubSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.General.AccountSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.General.AccountSubSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.General.UpdatesSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.General.UpdatesSubSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.General.ThemeSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.General.ThemeSubSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.General.LoggingSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.General.LoggingSubSettingsViewModel));
-            // - Tools
-            viewModelLocator.Register(typeof(Views.SettingsPages.ToolSettingsView), typeof(ViewModels.SettingsPages.ToolSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.Tool.AssetBrowserSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.Tool.AssetBrowserSubSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.Tool.CodeEditorSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.Tool.CodeEditorSubSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.Tool.PluginManagerSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.Tool.PluginManagerSubSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.Tool.VisualEditorSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.Tool.VisualEditorSubSettingsViewModel));
-            // - Editor
-            viewModelLocator.Register(typeof(Views.SettingsPages.EditorSettingsView), typeof(ViewModels.SettingsPages.EditorSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.Editor.GeneralSubSettingsView), typeof(ViewModels.SettingsPages.SubPages.Editor.GeneralSubSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.SettingsPages.SubPages.Editor.CompatibilitySubSettingsView), typeof(ViewModels.SettingsPages.SubPages.Editor.CompatibilitySubSettingsViewModel));
-            // - Packaging
-            viewModelLocator.Register(typeof(Views.SettingsPages.PackagingSettingsView), typeof(ViewModels.SettingsPages.PackagingSettingsViewModel));
-            // - Integrations
-            viewModelLocator.Register(typeof(Views.SettingsPages.IntegrationsSettingsView), typeof(ViewModels.SettingsPages.IntegrationsSettingsViewModel));
-
-
-            // ---- HeadCategory : Wizards
-            //-- Category : UserWizard
-            viewModelLocator.Register(typeof(Views.Wizards.UserWizardView), typeof(ViewModels.Wizards.UserWizardViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.UserWizard.UserWizardPageView), typeof(ViewModels.Wizards.WizardPages.UserWizard.UserWizardPageViewModel));
-
-            //-- Category : ThemeWizard
-            viewModelLocator.Register(typeof(Views.Wizards.ThemeWizardView), typeof(ViewModels.Wizards.ThemeWizardViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.ThemeWizard.ThemeWizardPageView), typeof(ViewModels.Wizards.WizardPages.ThemeWizard.ThemeWizardPageViewModel));
-
-            //-- Category : ProjectWizard
-            viewModelLocator.Register(typeof(Views.Wizards.ProjectWizardView), typeof(ViewModels.Wizards.ProjectWizardViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.ProjectWizard.SelectProjectTypeView), typeof(ViewModels.Wizards.WizardPages.ProjectWizard.SelectProjectTypeViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.ProjectWizard.ProjectConfigurationView), typeof(ViewModels.Wizards.WizardPages.ProjectWizard.ProjectConfigurationViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.ProjectWizard.FinalizeSetupView), typeof(ViewModels.Wizards.WizardPages.ProjectWizard.FinalizeSetupViewModel));
-
-            //-- Category : PublishWizard
-            viewModelLocator.Register(typeof(Views.Wizards.PublishWizardView), typeof(ViewModels.Wizards.PublishWizardViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.PublishWizard.RequiredSettingsView), typeof(ViewModels.Wizards.WizardPages.PublishWizard.RequiredSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.PublishWizard.OptionalSettingsView), typeof(ViewModels.Wizards.WizardPages.PublishWizard.OptionalSettingsViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.PublishWizard.FinalizeSetupView), typeof(ViewModels.Wizards.WizardPages.PublishWizard.FinalizeSetupViewModel));
-
-            //-- Category : FirstSetupWizard 
-            viewModelLocator.Register(typeof(Views.Wizards.FirstSetupWizardView), typeof(ViewModels.Wizards.FirstSetupWizardViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.FirstSetupWizard.CreateUserView), typeof(ViewModels.Wizards.WizardPages.FirstSetupWizard.CreateUserViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.FirstSetupWizard.SelectThemeView), typeof(ViewModels.Wizards.WizardPages.FirstSetupWizard.SelectThemeViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.FirstSetupWizard.SetInitialPreferencesView), typeof(ViewModels.Wizards.WizardPages.FirstSetupWizard.SetInitialPreferencesViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.FirstSetupWizard.LocateGameDateView), typeof(ViewModels.Wizards.WizardPages.FirstSetupWizard.LocateGameDataViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.FirstSetupWizard.FinalizeSetupView), typeof(ViewModels.Wizards.WizardPages.FirstSetupWizard.FinalizeSetupViewModel));
-
-            //-- Category : FeedBackWizard 
-            viewModelLocator.Register(typeof(Views.Wizards.FeedbackWizardView), typeof(ViewModels.Wizards.FeedbackWizardViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.FeedbackWizard.RateView), typeof(ViewModels.Wizards.WizardPages.FeedbackWizard.RateViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.FeedbackWizard.SendView), typeof(ViewModels.Wizards.WizardPages.FeedbackWizard.SendViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.FeedbackWizard.ReviewView), typeof(ViewModels.Wizards.WizardPages.FeedbackWizard.ReviewViewModel));
-
-
-            //-- Category : InstallerWizard 
-            viewModelLocator.Register(typeof(Views.Wizards.InstallerWizardView), typeof(ViewModels.Wizards.InstallerWizardViewModel));
-
-            //-- Category : BugReportWizard 
-            viewModelLocator.Register(typeof(Views.Wizards.BugReportWizard), typeof(ViewModels.Wizards.BugReportWizardViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.BugReportWizard.AttachBugView), typeof(ViewModels.Wizards.WizardPages.BugReportWizard.AttachBugViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.BugReportWizard.DescribeBugView), typeof(ViewModels.Wizards.WizardPages.BugReportWizard.DescribeBugViewModel));
-            viewModelLocator.Register(typeof(Views.Wizards.WizardPages.BugReportWizard.SendBugView), typeof(ViewModels.Wizards.WizardPages.BugReportWizard.SendBugViewModel));
-
-
-            var viewLocator = ServiceLocator.Default.ResolveType<IViewLocator>();
-            viewLocator.Register(typeof(ViewModels.SettingsViewModel), typeof(Views.SettingsWindow));
-            viewLocator.Register(typeof(ViewModels.InputDialogViewModel), typeof(Views.Dialogs.InputDialog));
-
-
-
-            var shellService = serviceLocator.ResolveType<IShellService>();
-            await shellService.CreateAsync<ShellWindow>();
-
-
-            ControlzEx.Theming.ThemeManager.Current.ChangeTheme(Application.Current, "Dark.Red");
-            HandyControl.Tools.ThemeManager.Current.SetCurrentValue(HandyControl.Tools.ThemeManager.ApplicationThemeProperty, HandyControl.Tools.ApplicationTheme.Dark);
- 
-            Log.Info("Calling base.OnStartup");
-
-
-
-      
-            base.OnStartup(e); 
-            NNViewRegistrar.RegisterSplat();
-
-
-
+            // load oodle
+            _settingsManager = Locator.Current.GetService<ISettingsManager>();
+            if (_settingsManager?.IsHealthy() == true && !Oodle.Load(_settingsManager.GetRED4OodleDll()))
+            {
+                throw new FileNotFoundException($"{Core.Constants.Oodle} not found.");
+            }
         }
 
+        // Application OnStartup Override.
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            _settingsManager ??= Locator.Current.GetService<ISettingsManager>();
+
+            _loggerService = Locator.Current.GetService<ILoggerService>();
+            _loggerService.Info("Starting application");
+            _loggerService.Info($"Version: {_settingsManager.GetVersionNumber()}");
+
+            // Register themes before loading any UI to avoid exceptions.
+            try
+            {
+                _loggerService.Info("Registering themes...");
+                var themeSettings = BuildTheme(_settingsManager);
+                SfSkinManager.RegisterThemeSettings("MaterialDark", themeSettings);
+                SfSkinManager.ApplyStylesOnApplication = true;
+                _loggerService.Info("Themes registered successfully.");
+            }
+            catch (WolvenKitException ex)
+            {
+                _loggerService.Error($"Exception while registering themes: {ex.Message}");
+            }
+
+            Interactions.ShowFirstTimeSetup = () =>
+            {
+                var dialog = new FirstSetupView();
+
+                var result = dialog.ShowDialog() == true;
+                return result;
+            };
+
+
+            _loggerService.Debug("Initializing red database");
+            Initializations.InitializeThemeHelper();
+
+            Initializations.InitializeSyntaxHighlighting();
+
+            // main app viewmodel
+            _loggerService.Debug("Initializing Shell");
+            Initializations.InitializeShell(_settingsManager);
+
+            RedImage.LoggerService = _loggerService;
+            DiscordHelper.LoggerService = _loggerService;
+
+            _loggerService.Debug("Initializing Discord RPC API");
+            DiscordHelper.SetEnabled(_settingsManager.IsDiscordRPCEnabled);
+            DiscordHelper.InitializeDiscordRPC();
+
+            _settingsManager
+                .WhenPropertyChanged(settings => settings.UiScale)
+                .Skip(1)
+                .Subscribe(_ => OnUiScaleChanged());
+
+            StartDeferredServiceLoad();
+
+            base.OnStartup(e);
+        }
+
+        private static void StartDeferredServiceLoad()
+        {
+            var thread = new Thread(() =>
+            {
+                // ~250 ms; cheap, so get it out of the way first
+                var cruidService = Locator.Current.GetService<CRUIDService>();
+                cruidService?.Load();
+
+                // ~5 000 ms
+                var hashService = Locator.Current.GetService<IHashService>();
+                hashService?.Load();
+            })
+            {
+                Name = "WolvenKit.DeferredServiceLoad",
+                Priority = ThreadPriority.BelowNormal,
+                IsBackground = true
+            };
+
+            thread.Start();
+        }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            Log.Information("Exiting application...");
+            Log.CloseAndFlush();
+
             base.OnExit(e);
+        }
+
+        private IServiceProvider Container { get; set; }
+
+        private IHost _host;
+
+        private void Init()
+        {
+            // Set application licenses.
+            Initializations.InitializeLicenses();
+            //protobuf
+            //RuntimeTypeModel.Default[typeof(IGameArchive)].AddSubType(20, typeof(Archive));
+
+            _host = GenericHost.CreateHostBuilder().Build();
+
+            // Since MS DI container is a different type,
+            // we need to re-register the built container with Splat again
+            Container = _host.Services;
+            Container.UseMicrosoftDependencyResolver();
+
+            MoveOldLogs();
+
+            var path = Path.Combine(ISettingsManager.GetLogsDir(), "applog.txt");
+            var outputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}";
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+#if DEBUG
+
+                .WriteTo.Async(a => a.Console(), bufferSize: 1000)
+#endif
+                .WriteTo.MySink(_host.Services.GetService<MySink>())
+                .WriteTo.Async(
+                    a => a.File(
+                        path,
+                        outputTemplate: outputTemplate,
+                        rollingInterval: RollingInterval.Day,
+                        fileSizeLimitBytes: 100 * 1000 * 1024, // MaxFileSize: 100 MB
+                        retainedFileCountLimit: 10,
+                        buffered: true, // Allow internal buffering.
+                        flushToDiskInterval: TimeSpan.FromMinutes(1)), // Write once per minute.
+                    bufferSize: 1000)
+                .CreateLogger();
+        }
+
+        private void MoveOldLogs()
+        {
+            var logFolder = ISettingsManager.GetLogsDir();
+
+            var existingLogs = Directory.GetFiles(logFolder, "*.txt");
+
+            foreach (var file in Directory.GetFiles(ISettingsManager.GetAppData(), "applog*.txt", SearchOption.TopDirectoryOnly))
+            {
+                var fileName = Path.GetFileName(file);
+                var destFileName = Path.Combine(logFolder, fileName);
+
+                var rotatingIndex = 1;
+
+                while (existingLogs.Contains(destFileName))
+                {
+                    destFileName = Path.Combine(logFolder, $"{fileName.Replace(".txt", "")}_{rotatingIndex:D3}.txt");
+                    rotatingIndex++;
+                }
+
+                FileHelper.SafeMove(file, destFileName);
+            }
+        }
+
+        private static IThemeSetting BuildTheme(ISettingsManager settingsManager)
+        {
+            return new MaterialDarkThemeSettings
+            {
+                PrimaryBackground = new SolidColorBrush(settingsManager.GetThemeAccent()),
+                BodyFontSize = 11 * settingsManager.UiScalePercentage,
+                HeaderFontSize = 14 * settingsManager.UiScalePercentage,
+                SubHeaderFontSize = 13 * settingsManager.UiScalePercentage,
+                TitleFontSize = 13 * settingsManager.UiScalePercentage,
+                SubTitleFontSize = 12 * settingsManager.UiScalePercentage,
+                BodyAltFontSize = 11 * settingsManager.UiScalePercentage,
+                FontFamily = new FontFamily("Segoe UI")
+            };
+        }
+
+        // NOTE: used for debug environment
+        public static void UpdateTheme(ISettingsManager settingsManager)
+        {
+            var window = Application.Current.MainWindow;
+            // NOTE: trick SfSkinManager to unregister current ThemeSettings.
+            var theme = SfSkinManager.GetTheme(window);
+
+            theme.ThemeName = "";
+            var themeSettings = BuildTheme(settingsManager);
+
+            SfSkinManager.RegisterThemeSettings("MaterialDark", themeSettings);
+            SfSkinManager.ApplyStylesOnApplication = true;
+            SfSkinManager.SetTheme(window, new Theme("MaterialDark"));
+            window.InvalidateVisual();
+            window.UpdateLayout();
+            window.Visibility = Visibility.Collapsed;
+
+            Task.Delay(1000).ContinueWith(_ =>
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    window.InvalidateVisual();
+                    window.UpdateLayout();
+                    window.Visibility = Visibility.Visible;
+                });
+            });
+        }
+
+        private void OnUiScaleChanged()
+        {
+            DispatcherHelper.RunOnMainThread(async () =>
+            {
+#if DEBUG
+                // NOTE: Allow dynamic scaling to speed-up workflow when working on UI.
+                //       You might need to restart manually in some cases.
+                UpdateTheme(_settingsManager);
+                await Task.CompletedTask;
+#else
+                await Interactions.ShowMessageBoxAsync("WolvenKit will restart to apply UI changes.", "Restart to scale UI", WMessageBoxButtons.Ok);
+                ProcessHelper.Restart(Current);
+#endif
+            });
+        }
+
+        //https://stackoverflow.com/a/46804709/16407587
+        private void SetupExceptionHandling()
+        {
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                LogUnhandledException((Exception)e.ExceptionObject, "AppDomain.CurrentDomain.UnhandledException");
+                if (e.IsTerminating) // And we have no choice but to exit, flush/write any pending logs.
+                {
+                    Log.CloseAndFlush();
+                }
+            };
+
+            DispatcherUnhandledException += (s, e) =>
+            {
+                LogUnhandledException(e.Exception, "Application.Current.DispatcherUnhandledException");
+                e.Handled = true;
+            };
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                LogUnhandledException(e.Exception, "TaskScheduler.UnobservedTaskException");
+                e.SetObserved();
+            };
+
+            RxApp.DefaultExceptionHandler = new DefaultObserverExceptionHandler();
+        }
+
+        /// <summary>
+        /// This isn't great but can used until each TaskCommand ThrownExceptions can be properly subscribed to.
+        /// </summary>
+        // https://www.reactiveui.net/docs/handbook/default-exception-handler/
+        public class DefaultObserverExceptionHandler : IObserver<Exception>
+        {
+            public void OnNext(Exception ex)
+            {
+                if (Debugger.IsAttached) // If we're debugging, break.
+                {
+                    Debugger.Break();
+                }
+
+                LogUnhandledException(ex, "RxApp.DefaultExceptionHandler");
+            }
+
+            public void OnError(Exception ex)
+            {
+                if (Debugger.IsAttached) // If we're debugging, break.
+                {
+                    Debugger.Break();
+                }
+
+                LogUnhandledException(ex, "RxApp.DefaultExceptionHandler");
+            }
+
+            public void OnCompleted()
+            {
+                if (Debugger.IsAttached) // If we're debugging, break.
+                {
+                    Debugger.Break();
+                }
+            }
+        }
+
+        private static void LogUnhandledException(Exception exception, string source)
+        {
+            var _logger = Splat.Locator.Current.GetService<ILoggerService>();
+            if (_logger == null)
+            {
+                return;
+            }
+
+            var message = $"Unhandled exception ({source})";
+            try
+            {
+                var assemblyName = System.Reflection.Assembly.GetExecutingAssembly().GetName();
+                message = string.Format("Unhandled exception in {0} v{1}", assemblyName.Name, assemblyName.Version);
+                _logger.Error(message);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex);
+            }
+            finally
+            {
+                var isInner = false;
+                while (exception != null)
+                {
+                    if (isInner)
+                    {
+                        _logger.Error("--------- InnerException ---------");
+                    }
+                    _logger.Error(exception);
+
+                    exception = exception.InnerException;
+                    isInner = true;
+                }
+                //Application.Current.Shutdown();
+            }
         }
     }
 }

@@ -1,0 +1,89 @@
+<UserControl
+    x:Class="WolvenKit.Views.Documents.RDTTextureView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:documents="clr-namespace:WolvenKit.App.ViewModels.Documents;assembly=WolvenKit.App"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:others="clr-namespace:WolvenKit.Views.Others"
+    xmlns:templates="clr-namespace:WolvenKit.Views.Templates"
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance Type={x:Type documents:RDTTextureViewModel}}"
+    d:DesignWidth="800"
+    d:DesignHeight="450"
+    BorderBrush="{StaticResource BorderAlt}"
+    BorderThickness="1">
+    <StackPanel
+        Height="Auto"
+        VerticalAlignment="Stretch"
+        Background="{StaticResource ContentBackground}"
+        Orientation="Vertical">
+        <Border
+            Padding="0"
+            Visibility="{Binding IsRendered,
+                                 Converter={StaticResource BooleanToVisibilityConverter}}"
+            ClipToBounds="True">
+            <Border.ContextMenu>
+                <ContextMenu Style="{StaticResource WPFContextMenuStyle}">
+                    <MenuItem
+                        Click="ResetZoomPan"
+                        Header="Reset Zoom/Pan">
+                        <MenuItem.Icon>
+                            <templates:IconBox
+                                IconPack="Material"
+                                Kind="Magnify"
+                                Foreground="White" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+
+                    <MenuItem
+                        Click="SaveImage"
+                        Header="Save Image">
+                        <MenuItem.Icon>
+                            <templates:IconBox
+                                IconPack="Codicons"
+                                Kind="Save"
+                                Foreground="{StaticResource WolvenKitCyan}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+
+                    <MenuItem
+                        Command="{Binding ReplaceTextureCommand}"
+                        Header="Replace Texture">
+                        <MenuItem.Icon>
+                            <templates:IconBox
+                                IconPack="Material"
+                                Kind="FileReplaceOutline"
+                                Foreground="White" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+
+                    <MenuItem
+                        Command="{Binding SaveAsCubeCommand}"
+                        Header="Save as cube">
+                        <MenuItem.Icon>
+                            <templates:IconBox IconPack="Empty" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+
+                    <MenuItem
+                        Command="{Binding LoadFromCubeCommand}"
+                        Header="Load from cube">
+                        <MenuItem.Icon>
+                            <templates:IconBox IconPack="Empty" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </Border.ContextMenu>
+
+            <others:ImageCanvas
+                x:Name="ImageCanvasItem"
+                Source="{Binding Image}" />
+        </Border>
+
+        <others:LoadingTextControl
+            Visibility="{Binding IsRendered,
+                                 Converter={StaticResource BoolInvertConverter}}"
+            VisibilityFlag="{Binding IsRendered}" />
+    </StackPanel>
+</UserControl>
