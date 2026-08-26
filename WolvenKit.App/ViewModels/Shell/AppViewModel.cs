@@ -71,6 +71,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
     private readonly ILoggerService _loggerService;
     private readonly IProjectManager _projectManager;
+    private readonly IProjectEvents _projectEvents;
     private readonly IGameControllerFactory _gameControllerFactory;
     private readonly INotificationService _notificationService;
     private readonly IRecentlyUsedItemsService _recentlyUsedItemsService;
@@ -83,7 +84,6 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
     private readonly DocumentTools _documentTools;
     private readonly Cr2WTools _cr2WTools;
     public readonly TemplateFileTools TemplateFileTools;
-    private readonly IWatcherService _watcherService;
     private readonly ArchiveXlItemService _archiveXlItemService;
     private readonly IUpdateService _updateService;
     private readonly RedTypeTemplateService _redTypeTemplateService;
@@ -114,7 +114,6 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         IHashService hashService,
         ITweakDBService tweakDBService,
         Red4ParserService parserService,
-        IWatcherService watcherService,
         ArchiveXlItemService archiveXlItemService,
         AppScriptService scriptService,
         IModTools modTools,
@@ -124,6 +123,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         ProjectResourceTools projectResourceTools,
         IUpdateService updateService,
         RedTypeTemplateService redTypeTemplateService,
+        IProjectEvents projectEvents,
         IArchiveManagerLoader archiveManagerLoader
     )
     {
@@ -142,7 +142,6 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         _archiveManager = archiveManager;
         _tweakDBService = tweakDBService;
         _parser = parserService;
-        _watcherService = watcherService;
         _archiveXlItemService = archiveXlItemService;
         _scriptService = scriptService;
         _documentTools = documentTools;
@@ -151,6 +150,9 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         ProjectResourceTools = projectResourceTools;
         _updateService = updateService;
         _redTypeTemplateService = redTypeTemplateService;
+        _projectEvents = projectEvents;
+        _projectEvents.FilesMoved.Subscribe(msg => SafeRefreshOpenDocuments(() => RefreshOpenDocumentsAfterMoves(msg)));
+        _projectEvents.FilesImported.Subscribe(msg => SafeRefreshOpenDocuments(() => RefreshOpenDocumentsAfterImports(msg)));
         _archiveManagerLoader = archiveManagerLoader;
 
         _fileValidationScript = _scriptService.GetScripts().ToList()
@@ -319,16 +321,6 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
     /// One-time application startup work. Call once, from the shell, after its bindings are in
     /// place.
     /// </summary>
-    /// <remarks>
-    /// This used to hang off the <c>Status</c> property setter as a side effect, which meant it
-    /// could not be awaited, could not be ordered relative to the shell's own setup, and turned
-    /// any failure into an exception escaping a property assignment. Being an explicit awaitable
-    /// call also removes the need to branch on <c>TestHelper.InActiveTest</c> - tests simply await
-    /// it.
-    ///
-    /// Never throws: a discarded task's exception would otherwise go unobserved, and none of this
-    /// work is worth failing a launch over.
-    /// </remarks>
     public async Task InitializeAsync()
     {
         try
@@ -358,9 +350,6 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         CheckForLongPathSupport();
         CheckForOneDrivePath();
 
-            // Archives load last, and only once the shell has gone idle. The scan allocates
-            // heavily on a background thread, and GC pauses hit the UI thread too - starting it
-            // any earlier visibly stalls the window as it is still drawing itself.
             if (Application.Current is { } app)
             {
                 await app.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
@@ -377,17 +366,6 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
     /// <summary>
     /// Loads the archive manager, logging rather than propagating a failure.
     /// </summary>
-    /// <remarks>
-    /// A corrupt, locked or missing archive should cost the user the asset browser, not the whole
-    /// application: before archive loading moved here it ran inside LoadProjectFromPathAsync
-    /// behind exactly this try/catch, and ArchiveManagerLoader still rethrows after logging.
-    /// Without the guard the fault escapes HandleActivation, then OnStatusChanged, then the
-    /// Status setter, and takes startup down with it.
-    ///
-    /// The catch has to live inside the async method rather than around the dispatcher call:
-    /// Dispatcher.Invoke(Func&lt;Task&gt;, ...) hands back the Task and drops it, so anything
-    /// thrown after the first await would be swallowed unobserved instead of logged.
-    /// </remarks>
     private async Task LoadArchivesSafelyAsync()
     {
         try
@@ -466,7 +444,8 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         string? projectPathToOpen = null;
 
         // Will be overwritten if the launch args contain a project path
-        if (args.Contains("-reopenProject") && SettingsManager.LastUsedProjectPath is string projectPath)
+        if ((args.Contains("-reopenProject") || SettingsManager.ReopenLastProject)
+            && (SettingsManager.LastUsedProjectPath is string projectPath))
         {
             projectPathToOpen = projectPath;
         }
@@ -768,7 +747,8 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
     [RelayCommand]
     private async Task OpenProjectAsync(string location)
     {
-        // "Open Project" button was pushed
+        var projectExplorer = GetToolViewModel<ProjectExplorerViewModel>();
+
         if (string.IsNullOrWhiteSpace(location))
         {
             var dlg = new OpenFileDialog
@@ -781,6 +761,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
             if (dlg.ShowDialog() != true || dlg.FileName is not string result || string.IsNullOrEmpty(result))
             {
+                projectExplorer.CancelProjectLoad();
                 return;
             }
 
@@ -789,6 +770,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
         if (_projectManager.ActiveProject?.Location == location)
         {
+            projectExplorer.CancelProjectLoad();
             CloseModal();
             return;
         }
@@ -803,6 +785,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         // file was moved or deleted
         if (_recentlyUsedItemsService.Items.Items.All(x => x.Name != location))
         {
+            projectExplorer.CancelProjectLoad();
             throw new WolvenKitException(0x5002,
                 "Failed to load project. Please open a github issue and attach a zip so that we can fix it!");
         }
@@ -814,6 +797,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
         if (res is not (WMessageBoxResult.OK or WMessageBoxResult.Yes))
         {
+            projectExplorer.CancelProjectLoad();
             return;
         }
 
@@ -827,6 +811,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
         if (dlg2.ShowDialog() != true || dlg2.FileName is not string filePath || string.IsNullOrEmpty(filePath))
         {
+            projectExplorer.CancelProjectLoad();
             return;
         }
 
@@ -836,7 +821,11 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         if (File.Exists(filePath))
         {
             CloseModal();
-            await _projectManager.LoadAsync(filePath);
+            await LoadProjectFromPathAsync(filePath);
+        }
+        else
+        {
+            projectExplorer.CancelProjectLoad();
         }
     }
 
@@ -844,40 +833,73 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
     internal async Task LoadProjectFromPathAsync(string location)
     {
-        var p = await _projectManager.LoadAsync(location);
-        if (p is null)
-        {
-            return;
-        }
+        var projectExplorer = GetToolViewModel<ProjectExplorerViewModel>();
+        projectExplorer.ProjectWillLoad(location);
 
-        ActiveProject = p;
-
-        // If the assets can't be found, stop here and notify the user in the log
-        if (!File.Exists(SettingsManager.CP77ExecutablePath))
+        try
         {
-            UpdateTitle();
-            _loggerService.Warning($"Cyberpunk 2077 executable path is not set. Asset browser disabled.");
-            return;
-        }
+            var p = await _projectManager.LoadAsync(location);
 
-        DispatcherHelper.DelayOnMainThread(() =>
-        {
-            UpdateTitle();
-            _notificationService.Success($"Project {Path.GetFileNameWithoutExtension(location)} loaded!");
-            // https://github.com/WolvenKit/WolvenKit/issues/1962
-            if (!FilepathValidationTools.IsOsFilePathValid(location))
+            if (p is null || !ProjectLocationsMatch(p.Location, location))
             {
-                _notificationService.Warning($"Project path {location} contains invalid characters!");
+                throw (new WolvenKitException(0x0b20f001, $"Project location to be loaded {location} {Environment.NewLine}did not match actual project location {p?.Location}{Environment.NewLine}. This is a bug, please report to the WolvenKit discord."));
             }
 
-            OnInitialProjectLoaded?.Invoke(this, EventArgs.Empty);
-        }, 1000);
+            ActiveProject = p;
+
+            // If the assets can't be found, stop here and notify the user in the log
+            if (!File.Exists(SettingsManager.CP77ExecutablePath))
+            {
+                UpdateTitle();
+                _loggerService.Warning($"Cyberpunk 2077 executable path is not set. Asset browser disabled.");
+                // Still load the project even if there's no CP77 path.
+                OnInitialProjectLoaded?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            DispatcherHelper.DelayOnMainThread(() =>
+            {
+                UpdateTitle();
+                _notificationService.Success($"Project {Path.GetFileNameWithoutExtension(location)} loaded!");
+                // https://github.com/WolvenKit/WolvenKit/issues/1962
+                if (!FilepathValidationTools.IsOsFilePathValid(location))
+                {
+                    _notificationService.Warning($"Project path {location} contains invalid characters!");
+                }
+
+                OnInitialProjectLoaded?.Invoke(this, EventArgs.Empty);
+            }, 1000);
+        }
+        catch (Exception ex)
+        {
+            projectExplorer.CancelProjectLoad();
+            _loggerService.Error($"Error loading project: {ex}.");
+        }
+    }
+
+    private static bool ProjectLocationsMatch(string loadedLocation, string requestedLocation)
+    {
+        if (string.IsNullOrWhiteSpace(loadedLocation) || string.IsNullOrWhiteSpace(requestedLocation))
+        {
+            return false;
+        }
+
+        try
+        {
+            return string.Equals(
+                Path.GetFullPath(loadedLocation),
+                Path.GetFullPath(requestedLocation),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception)
+        {
+            return string.Equals(loadedLocation, requestedLocation, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     [RelayCommand]
     private async Task NewProject()
     {
-        //IsOverlayShown = false;
         await SetActiveDialog(new ProjectWizardViewModel(SettingsManager)
         {
             FileHandler = NewProject
@@ -929,6 +951,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         {
             _loggerService.Error("Failed to create a new project!");
             _loggerService.Error(ex);
+            GetToolViewModel<ProjectExplorerViewModel>().CancelProjectLoad();
         }
     }
 
@@ -937,7 +960,15 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
     private bool CanSaveFile() => ActiveDocument is not null;
     [RelayCommand(CanExecute = nameof(CanSaveFile))]
-    private void SaveFile() => Save(ActiveDocument.NotNull());
+    private void SaveFile()
+    {
+        if (ActiveDocument is not IDocumentViewModel document)
+        {
+            return;
+        }
+
+        Save(document);
+    }
 
     private bool CanReloadFile() => ActiveDocument is not null;
     [RelayCommand(CanExecute = nameof(CanReloadFile))]
@@ -979,15 +1010,19 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
     private bool CanSaveAll() => CanSaveFile() || DockedViews.OfType<IDocumentViewModel>().Any();
     [RelayCommand(CanExecute = nameof(CanSaveAll))]
-    private void SaveAll()
+    private void SaveAll(bool onlyProjectFiles = false)
     {
-        if (_projectManager.ActiveProject is null)
+        if (_projectManager.ActiveProject is not { } activeProject)
         {
             Interactions.ShowConfirmation((s_noProjectText, s_noProjectTitle, WMessageBoxImage.Warning, WMessageBoxButtons.Ok));
             return;
         }
 
-        foreach (var file in DockedViews.OfType<IDocumentViewModel>().Where(f => f.IsDirty))
+        foreach (var file in DockedViews.OfType<IDocumentViewModel>()
+                     .Where(f => f.IsDirty)
+                     .Where(f => !onlyProjectFiles || activeProject.ModFiles
+                         .Select(relPath => Path.Join(activeProject.ModDirectory, relPath).ToLower())
+                         .Contains(f.FilePath?.ToLower())))
         {
             Save(file);
         }
@@ -995,7 +1030,19 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
 
     public async Task<bool> AreDirtyFilesHandledBeforeLaunch()
     {
-        var dirtyFiles = DockedViews.OfType<IDocumentViewModel>().Where(tab => tab.IsDirty).ToList();
+        var dirtyFiles = DockedViews.OfType<IDocumentViewModel>()
+            .Where(tab => tab.IsDirty)
+            .Where(tab =>
+            {
+                if (_projectManager.ActiveProject is not { } project || string.IsNullOrEmpty(tab.FilePath))
+                {
+                    return true;
+                }
+
+                var filePath = project.GetRelativePath(tab.FilePath) ?? tab.FilePath;
+                return project.ModFiles.Contains(filePath, StringComparer.InvariantCultureIgnoreCase);
+            }).ToList();
+
         if (dirtyFiles.Count == 0)
         {
             return true;
@@ -1016,7 +1063,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
             case WMessageBoxResult.OK:
             case WMessageBoxResult.Yes:
             default:
-                SaveAll();
+                SaveAll(true);
                 break;
         }
 
@@ -1118,7 +1165,7 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
     }
 
     [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
-    private void DeleteEmptyFolders() => _projectManager.ActiveProject?.DeleteEmptyFolders(_loggerService);
+    private void DeleteEmptyFolders() => _projectManager.ActiveProject?.DeleteEmptyFolders(_loggerService, _projectEvents);
 
     [RelayCommand(CanExecute = nameof(CanShowProjectActions))]
     private void DeleteEmptyMeshes()
@@ -1498,6 +1545,8 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
             throw new WolvenKitException(0x4003, "No project loaded");
         }
 
+        var projExp = GetToolViewModel<ProjectExplorerViewModel>();
+
         if (string.IsNullOrEmpty(GetModderName()))
         {
             return;
@@ -1509,15 +1558,15 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
             return;
         }
 
-        _watcherService.Suspend();
+        projExp.Suspend();
         try
         {
             _archiveXlItemService.CreateEquipmentItem(item);
         }
         finally
         {
-            _watcherService.Resume();
-            _watcherService.Refresh();
+            projExp.Resume();
+            projExp.RefreshWatcher();
         }
     }
 
@@ -1685,8 +1734,15 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
                 continue;
             }
 
+            if (!documentViewModel.IsDirty)
+            {
+                documentViewModel.Reload(true);
+                continue;
+            }
+
             var result = Interactions.ShowConfirmation((
-                $"The file {documentViewModel.FilePath} has been modified externally. Do you want to reload it?",
+                $"The file {documentViewModel.FilePath} has been modified on disk, but you have unsaved changes. " +
+                "Reload and discard your changes?",
                 "File Modified",
                 WMessageBoxImage.Question,
                 WMessageBoxButtons.YesNo));
@@ -3084,6 +3140,131 @@ public partial class AppViewModel : ObservableObject/*, IAppViewModel*/
         catch
         {
             _loggerService.Error($"Failed to reload {project.GetRelativePath(absolutePath)}");
+        }
+    }
+
+    private void RefreshOpenDocumentsAfterMoves(FilesMovedMessage msg)
+    {
+        if (!DockedViews.OfType<IDocumentViewModel>().Any())
+        {
+            return;
+        }
+
+        foreach (var (from, to) in msg.Moves)
+        {
+            // File was moved/renamed
+            var handledMovedTab = !string.IsNullOrEmpty(from)
+                                  && !from.Equals(to, StringComparison.OrdinalIgnoreCase)
+                                  && TryRefreshOpenDocument(from, to);
+
+            // File was overwritten by external app
+            if (!handledMovedTab)
+            {
+                TryRefreshOpenDocument(to);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Refreshes open document tabs after an open file is overwritten by another part of the app
+    /// such as converting to/from JSON, etc.
+    /// </summary>
+    private void RefreshOpenDocumentsAfterImports(FilesImportedMessage msg)
+    {
+        if (_projectManager.ActiveProject is not { } project
+            || !DockedViews.OfType<IDocumentViewModel>().Any())
+        {
+            return;
+        }
+
+        switch (msg)
+        {
+            case FilesImportedMessage.GameFiles(var files):
+                foreach (var gameFile in files)
+                {
+                    // FileName is a resource path and may use '/'; normalize to an OS path so it matches the
+                    // document's FilePath (which the watcher builds via FileInfo).
+                    TryRefreshOpenDocument(Path.GetFullPath(Path.Combine(project.ModDirectory, gameFile.FileName)));
+                }
+
+                break;
+
+            case FilesImportedMessage.RawFiles(var files):
+                foreach (var rawFile in files)
+                {
+                    TryRefreshOpenDocument(rawFile.FullName);
+                }
+
+                break;
+        }
+    }
+
+    /// <summary>
+    /// If a document is open at <paramref name="currentFilePath"/>, refresh it from disk, optionally
+    /// retargeting it to <paramref name="newFilePath"/> first (for a rename/move). Clean documents are
+    /// reloaded silently; documents with unsaved changes are skipped with a warning so edits aren't
+    /// lost. Returns true if a matching open document was found.
+    /// </summary>
+    private bool TryRefreshOpenDocument(string currentFilePath, string? newFilePath = null)
+    {
+        var targetPath = newFilePath ?? currentFilePath;
+
+        if (string.IsNullOrEmpty(currentFilePath) || !File.Exists(targetPath))
+        {
+            return false;
+        }
+
+        if (DockedViews.OfType<IDocumentViewModel>().FirstOrDefault(doc =>
+                currentFilePath.Equals(doc.FilePath, StringComparison.OrdinalIgnoreCase)) is not { } openDocument)
+        {
+            return false;
+        }
+
+        if (openDocument.IsDirty)
+        {
+            var warning =
+                $"Warning: the open document that used to exist at path \"{openDocument.FilePath}\" has been moved, renamed, or deleted while it had unsaved changes. To protect your changes, save your file now. A new file will be created at the former path.";
+
+            _ = Interactions.ShowMessageBox(
+                warning,
+                "Warning",
+                WMessageBoxButtons.Ok);
+
+            _loggerService.Warning(warning);
+            return true;
+        }
+
+        if (!targetPath.Equals(openDocument.FilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            openDocument.FilePath = targetPath; // follow the rename/move so Reload reads the new file
+        }
+
+        try
+        {
+            openDocument.Reload(true);
+        }
+        catch
+        {
+            _loggerService.Error($"Failed to refresh \"{Path.GetFileName(targetPath)}\" after it changed on disk.");
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Runs an open-document refresh on the UI thread, logging any exceptions. The
+    /// FilesMoved/FilesImported subscriptions run synchronously on the publishing thread, so a throw
+    /// here would escape into the publisher (e.g. MoveAndRefactorAsync mid-rename).
+    /// </summary>
+    private void SafeRefreshOpenDocuments(Action refresh)
+    {
+        try
+        {
+            DispatcherHelper.RunOnMainThread(refresh);
+        }
+        catch (Exception ex)
+        {
+            _loggerService.Error($"Failed to refresh open documents after a file change: {ex.Message}");
         }
     }
 

@@ -1,3 +1,4 @@
+using DynamicData;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,7 +18,9 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.Messaging;
 using HandyControl.Data;
+using MahApps.Metro.Controls;
 using ReactiveUI;
+using Splat;
 using Syncfusion.Data;
 using Syncfusion.UI.Xaml.Grid;
 using Syncfusion.UI.Xaml.TreeGrid;
@@ -30,10 +33,14 @@ using WolvenKit.App.Services;
 using WolvenKit.App.ViewModels.Dialogs;
 using WolvenKit.App.ViewModels.Documents;
 using WolvenKit.App.ViewModels.Tools;
+using WolvenKit.Core.Exceptions;
+using WolvenKit.Core.Interfaces;
 using WolvenKit.Services;
 using WolvenKit.Views.Dialogs;
 using WolvenKit.Views.Dialogs.Windows;
 using WolvenKit.Helpers;
+using WolvenKit.RED4.Types;
+using WolvenKit.Views.Others;
 using WolvenKit.Views.Templates;
 using RowColumnIndex = Syncfusion.UI.Xaml.ScrollAxis.RowColumnIndex;
 
@@ -49,6 +56,8 @@ namespace WolvenKit.Views.Tools
         #region fields
 
         private readonly IMessenger _messenger;
+
+        private readonly ILoggerService _loggerService;
 
         private List<IDisposable> _disposables = [];
 
@@ -80,6 +89,7 @@ namespace WolvenKit.Views.Tools
         private readonly DispatcherTimer _searchDebounceTimer;
         private bool _isDragging;
         private CancellationTokenSource _deferRefreshTokenSource = new();
+        private readonly CancellableRowDragDropController _rowDragDropController;
 
         /// <summary>
         /// When true, NodeExpanded/NodeCollapsed must not persist expansion state or write
@@ -94,6 +104,10 @@ namespace WolvenKit.Views.Tools
         /// </summary>
         private bool _searchMutatedExpansion;
 
+        private ProjectExplorerViewModel.LoadingMode _loadingMode = ProjectExplorerViewModel.LoadingMode.Ready;
+
+        private bool _isShowingLoadingIndicator = true;
+
         #endregion fields
 
         #region Constructor
@@ -105,6 +119,8 @@ namespace WolvenKit.Views.Tools
             _messenger = WeakReferenceMessenger.Default;
             _messenger.RegisterAll(this);
 
+            _loggerService = Locator.Current.GetService<ILoggerService>();
+
             // Debounce for live search
             _searchDebounceTimer = new DispatcherTimer
             {
@@ -113,9 +129,12 @@ namespace WolvenKit.Views.Tools
 
             _searchDebounceTimer.Tick += SearchDebounceTimer_Tick;
 
+            _rowDragDropController = new CancellableRowDragDropController();
+
             TreeGrid.ItemsSourceChanged += TreeGrid_ItemsSourceChanged;
             TreeGridFlat.ItemsSourceChanged += TreeGridFlat_ItemsSourceChanged;
-            TreeGridFlat.SizeChanged += TreeGridFlat_SizeChanged;
+
+            TreeGrid.RowDragDropController = _rowDragDropController;
             TreeGrid.RowDragDropController.DragStart += RowDragDropController_DragStart;
             TreeGrid.RowDragDropController.DragOver += RowDragDropController_DragOver;
             TreeGrid.RowDragDropController.Drop += RowDragDropController_Drop;
@@ -217,6 +236,13 @@ namespace WolvenKit.Views.Tools
                     return result == true ? (dialog.PrimaryInput, dialog.EnableSecondaryInput, dialog.SecondaryInput, dialog.DropdownValue) : (null, false, null, null);
                 };
 
+                Interactions.ShowDialogueImport = (parameters) =>
+                {
+                    var dialog = new DialogueImportDialogView(parameters);
+
+                    return dialog.ShowDialog(Application.Current.MainWindow) == true ? dialog.ViewModel : null;
+                };
+
                 Interactions.AskForFolderPathInput = (args) =>
                 {
                     var dialog = new FolderPathInputDialogView(args.Item2, args.Item1);
@@ -254,7 +280,7 @@ namespace WolvenKit.Views.Tools
 
                 Observable
                     .FromEventPattern(TreeGridFlat, nameof(TreeGridFlat.CellDoubleTapped))
-                    .Subscribe(p => OnCellDoubleTapped(p.Sender, p.EventArgs as TreeGridCellDoubleTappedEventArgs))
+                    .Subscribe(p => OnFlatCellDoubleTapped(p.Sender, p.EventArgs as GridCellDoubleTappedEventArgs))
                     .DisposeWith(disposables);
 
                 this.BindCommand(ViewModel,
@@ -280,14 +306,126 @@ namespace WolvenKit.Views.Tools
                     .DisposeWith(disposables);
 
                 ViewModel.OnToggleFlatMode += OnToggleFlatMode;
-                ViewModel.BeginDeferredRefreshContext += BeginDeferredRefreshContext;
+                ViewModel.OnSetLoading += SetLoading;
+                ViewModel.BeginDeferredRefreshContext = BeginDeferredRefreshContext;
 
+                ViewModel.WhenAnyValue(x => x.IsFlatModeEnabled)
+                    .Subscribe(_ => UpdatePaneVisibility())
+                    .DisposeWith(disposables);
             });
+
+            this.ExecuteWhenLoaded(() => IndicateProjectLoading());
         }
 
         #endregion
 
         #region Project_Loading
+
+        private bool ShouldStartLoadingProject(ProjectExplorerViewModel.LoadingMode mode)
+        {
+            return mode == ProjectExplorerViewModel.LoadingMode.LoadingNewProject
+                   || mode == ProjectExplorerViewModel.LoadingMode.ReloadingSameProject;
+        }
+
+        private bool ShouldStopLoading(ProjectExplorerViewModel.LoadingMode mode)
+        {
+            return mode == ProjectExplorerViewModel.LoadingMode.Ready;
+        }
+
+        private bool ShouldStopTemporaryLoading(ProjectExplorerViewModel.LoadingMode mode)
+        {
+            return mode == ProjectExplorerViewModel.LoadingMode.Ready;
+        }
+
+        private bool ShouldStartTemporaryLoading(ProjectExplorerViewModel.LoadingMode mode)
+        {
+            return mode == ProjectExplorerViewModel.LoadingMode.ShowLoadingDuringOperation;
+        }
+
+        private bool IsFreshLoad(ProjectExplorerViewModel.LoadingMode mode)
+        {
+            return mode == ProjectExplorerViewModel.LoadingMode.LoadingNewProject;
+        }
+
+        private bool AlreadyLoadingProject()
+        {
+            return _loadingMode == ProjectExplorerViewModel.LoadingMode.LoadingNewProject
+                   || _loadingMode == ProjectExplorerViewModel.LoadingMode.ReloadingSameProject;
+        }
+
+        private bool AlreadyTemporaryLoading()
+        {
+            return _loadingMode == ProjectExplorerViewModel.LoadingMode.ShowLoadingDuringOperation;
+        }
+
+        private bool Ready()
+        {
+            return _loadingMode == ProjectExplorerViewModel.LoadingMode.Ready;
+        }
+
+        /// <summary>
+        /// Called by the ViewModel when the View should show "Loading" on the file pane.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SetLoading(object sender, ProjectExplorerViewModel.LoadingMode mode)
+        {
+            if (ShouldStartLoadingProject(mode) && Ready())
+            {
+                ResetCurrentFolderQuerySearchFilter();
+
+                if (IsFreshLoad(mode))
+                {
+                    IndicateProjectLoading();
+                }
+            }
+            else if (ShouldStopLoading(mode) && AlreadyLoadingProject())
+            {
+                IndicateProjectNotLoading();
+            }
+            else if (ShouldStopTemporaryLoading(mode) && AlreadyTemporaryLoading())
+            {
+                IndicateProjectNotLoading();
+            }
+            else if (ShouldStartTemporaryLoading(mode) && Ready())
+            {
+                IndicateProjectLoading();
+            }
+            else if (Ready())
+            {
+                IndicateProjectNotLoading();
+            }
+
+            _loadingMode = mode;
+        }
+
+        private void IndicateProjectLoading() => Dispatcher.Invoke(() =>
+        {
+            _isShowingLoadingIndicator = true;
+            UpdatePaneVisibility();
+        });
+
+        private void IndicateProjectNotLoading()
+        {
+            _isShowingLoadingIndicator = false;
+            UpdatePaneVisibility();
+        }
+
+        private void UpdatePaneVisibility()
+        {
+            var isFlat = ViewModel?.IsFlatModeEnabled ?? false;
+            var isLoading = _isShowingLoadingIndicator;
+
+            LoadingText.SetCurrentValue(VisibilityProperty, ToVisibility(isLoading));
+            TreeGrid.SetCurrentValue(VisibilityProperty, ToVisibility(!isLoading && !isFlat));
+            TreeGridFlat.SetCurrentValue(VisibilityProperty, ToVisibility(!isLoading && isFlat));
+
+            static Visibility ToVisibility(bool isVisible) => isVisible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        #endregion Project_Loading
+
+        #region refresh
 
         public void Receive(ChalkboardService.WillStartLoadingProjectFiles msg)
         {
@@ -310,11 +448,19 @@ namespace WolvenKit.Views.Tools
             {
                 _disposables.ForEach(d => d.Dispose());
                 _disposables.Clear();
+
+                if (TreeGrid.View is { } treeView)
+                {
+                    RestoreExpansionRecursive(treeView.Nodes);
+                }
             });
 
-        #endregion Project_Loading
-
-        #region refresh
+        private void ResetCurrentFolderQuerySearchFilter()
+        {
+            _currentFolderQuery = "";
+            _searchVisiblePaths = null;
+            PESearchBar?.SetCurrentValue(System.Windows.Controls.TextBox.TextProperty, "");
+        }
 
         // Run inside Dispatcher to avoid exception on startup
         private void ResetUiElements() => Dispatcher.Invoke(() =>
@@ -375,6 +521,21 @@ namespace WolvenKit.Views.Tools
             }
         }
 
+        /// <summary>
+        /// Needed to prevent a mysterious gray bar from
+        /// hiding part of the view.
+        /// </summary>
+        /// <param name="grid"></param>
+        private static void RefreshColumnWidths(SfTreeGrid grid)
+        {
+            if (grid.ActualWidth <= 0)
+            {
+                return;
+            }
+
+            grid.TreeGridColumnSizer?.Refresh();
+        }
+
         private static void RefreshFlatColumnWidths(SfDataGrid grid)
         {
             if (grid.ActualWidth <= 0)
@@ -404,13 +565,14 @@ namespace WolvenKit.Views.Tools
             return (innerVm.Text, innerVm.EnableRefactoring == true);
         }
 
-        // Not sure why the property binding broke, but it did. This fixes it.
         private void OnToggleFlatMode(object sender, EventArgs e)
         {
             if (sender is not ProjectExplorerViewModel model)
             {
                 return;
             }
+
+            UpdatePaneVisibility();
 
             if (model.IsFlatModeEnabled)
             {
@@ -422,6 +584,8 @@ namespace WolvenKit.Views.Tools
                 TreeGrid.SetCurrentValue(VisibilityProperty, Visibility.Visible);
                 TreeGridFlat.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
             }
+
+            ReapplyCurrentSearchFilter(expandAllForSearch: !string.IsNullOrWhiteSpace(_currentFolderQuery));
         }
 
         private void OnContextMenuOpen(object sender, ContextMenuEventArgs e)
@@ -634,13 +798,6 @@ namespace WolvenKit.Views.Tools
                     continue;
                 }
 
-                // Depth-first: fix children before this node so collapsing a parent
-                // does not leave child model/view state inconsistent.
-                if (node.ChildNodes is { Count: > 0 })
-                {
-                    RestoreExpansionRecursive(node.ChildNodes);
-                }
-
                 // Paths never recorded stay collapsed after search (search may have opened them).
                 var desired = ViewModel.GetExpansionStateOrNull(model.RawRelativePath) is true;
 
@@ -649,6 +806,11 @@ namespace WolvenKit.Views.Tools
                     if (!node.IsExpanded)
                     {
                         TreeGrid.ExpandNode(node);
+                    }
+
+                    if (node.ChildNodes is { Count: > 0 })
+                    {
+                        RestoreExpansionRecursive(node.ChildNodes);
                     }
                 }
                 else if (node.IsExpanded)
@@ -678,6 +840,7 @@ namespace WolvenKit.Views.Tools
         {
             if (ViewModel?.GetActiveEditorFile() is not IDocumentViewModel activeFile)
             {
+                e.Handled = true;
                 return;
             }
 
@@ -687,6 +850,7 @@ namespace WolvenKit.Views.Tools
 
             if (activeFileNode is null)
             {
+                e.Handled = true;
                 return;
             }
 
@@ -786,7 +950,7 @@ namespace WolvenKit.Views.Tools
 
         private void OnCellDoubleTapped(object sender, TreeGridCellDoubleTappedEventArgs e)
         {
-            if (e.Node.Item is not FileSystemModel model)
+            if (e?.Node?.Item is not FileSystemModel model)
             {
                 return;
             }
@@ -812,6 +976,16 @@ namespace WolvenKit.Views.Tools
             }
         }
 
+        private void OnFlatCellDoubleTapped(object sender, GridCellDoubleTappedEventArgs e)
+        {
+            if (e?.Record is not FileSystemModel model || model.IsDirectory)
+            {
+                return;
+            }
+
+            ViewModel?.GetAppViewModel().OpenFileCommand.SafeExecute(model);
+        }
+
         private void TreeIcon_Loaded(object sender, RoutedEventArgs e)
         {
             // NOTE: Margin="0" is not applied using XAML. This is likely due
@@ -821,6 +995,12 @@ namespace WolvenKit.Views.Tools
 
             view.SetCurrentValue(IconBox.MarginProperty, new Thickness(0));
             view.SetResourceReference(IconBox.SizeProperty, "WolvenKitIconNano");
+        }
+
+        private void OnTreeGridSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (!e.WidthChanged) return;
+            RefreshColumnWidths(TreeGrid);
         }
 
         #endregion grid responders
@@ -1121,106 +1301,110 @@ namespace WolvenKit.Views.Tools
 
             vm.IsDragging = true;
 
-            var draggingItems = e.DraggingNodes.Select(x => x.Item as FileSystemModel).ToList();
+            var draggingItems = e.DraggingNodes.Select(node => node.Item).OfType<FileSystemModel>().ToList();
 
-            if (vm.SelectedItems is { } selectedItems
-                && draggingItems.Select(x => !selectedItems.Contains(x)).ToList().Count > 0)
+            if (draggingItems.Count == 0)
             {
-                vm.SelectedItems.Clear();
-                vm.SelectedItems.AddRange(draggingItems);
-
-                if (draggingItems.Count == 1)
-                {
-                    vm.SelectedItem = draggingItems[0];
-                }
-
                 return;
             }
 
-            if (vm.SelectedItem is { } selectedItem && draggingItems.FirstOrDefault() is { } draggingItem)
+            // Whatever is dragged becomes the selection.
+            vm.TreeSelectedItems ??= [];
+
+            if (!IsSameSelection(vm.TreeSelectedItems, draggingItems))
             {
-                if (selectedItem.RawRelativePath != draggingItem.RawRelativePath)
-                {
-                    vm.SelectedItem = draggingItem;
-                }
+                vm.TreeSelectedItems.Clear();
+                vm.TreeSelectedItems.AddRange(draggingItems);
+            }
+
+            // keep the current item as the primary one if it is part of the drag
+            if (vm.SelectedItem is not { } selectedItem || !draggingItems.Contains(selectedItem))
+            {
+                vm.SelectedItem = draggingItems[0];
             }
         }
 
+        private static bool IsSameSelection(ICollection<object> selection, List<FileSystemModel> draggingItems) =>
+            selection.Count == draggingItems.Count && draggingItems.All(selection.Contains);
+
+        /// <summary>
+        /// Shows the drop indicator only where the drop would actually do something.
+        /// </summary>
         private void RowDragDropController_DragOver(object sender, TreeGridRowDragOverEventArgs e)
         {
-            if (!e.Data.GetDataPresent("Nodes") ||
-                e.Data.GetData("Nodes") is not ObservableCollection<TreeNode> treeNodes ||
-                treeNodes[0].Item is not FileSystemModel sourceFile ||
-                e.TargetNode.Item is not FileSystemModel targetFile)
+            if (ViewModel is not { } vm || e.TargetNode?.Item is not FileSystemModel targetItem)
             {
+                e.Handled = true;
                 return;
             }
 
-            if (targetFile == sourceFile)
-            {
-                e.ShowDragUI = false;
-                e.Handled = true;
-            }
-            else
-            {
-                e.ShowDragUI = true;
-                e.Handled = false;
-            }
+            var plan = PlanDrop(vm, e.Data, targetItem);
+
+            e.ShowDragUI = plan.IsActionable;
+
+            // A drop that does nothing  has to stay unhandled,
+            // or CanAutoExpand never gets to open that folder up.
+            e.Handled = plan.Rejection is ProjectExplorerDropHelper.DropRejection.ProjectRoot
+                or ProjectExplorerDropHelper.DropRejection.DirectoryIntoOwnDescendant;
         }
+
+        /// <summary>
+        /// Drag and drop only exists on the tree grid, so always read that grid's selection.
+        /// </summary>
+        private static ProjectExplorerDropHelper.DropPlan PlanDrop(
+            ProjectExplorerViewModel vm, IDataObject dropData, FileSystemModel targetItem) =>
+            ProjectExplorerDropHelper.PlanDrop(
+                targetItem,
+                ProjectExplorerDropHelper.GetDroppedPayload<TreeNode>(dropData, node => node.Item),
+                vm.TreeSelectedItems?.OfType<FileSystemModel>().ToList() ?? [],
+                ModifierViewStateService.IsCtrlBeingHeld);
 
         private async void RowDragDropController_Drop(object sender, TreeGridRowDropEventArgs e)
         {
-            // this should all be somewhere else, right?
             try
             {
-                e.Handled = _isDragging; // which should be true at this point
-                if (e.TargetNode.Item is not FileSystemModel targetFile || ViewModel is not ProjectExplorerViewModel vm)
+                _rowDragDropController.CancelPendingAutoExpand();
+                e.Handled = _isDragging;
+
+                if (e.TargetNode?.Item is not FileSystemModel targetItem || ViewModel is not { } vm)
                 {
                     e.Handled = true;
                     return;
                 }
 
-                var selectedFilePaths =
-                    vm.SelectedItems?.OfType<FileSystemModel>().Select(fsm => fsm.FullName).ToList() ?? [];
+                var plan = PlanDrop(vm, e.Data, targetItem);
 
-                var files = new List<string>();
+                ReportRefusals(plan);
 
-                if (e.Data.GetDataPresent(DataFormats.FileDrop) &&
-                    e.Data.GetData(DataFormats.FileDrop) is string[] fileDropData
-                   )
-                {
-                    files.AddRange(fileDropData);
-                }
-                else if (e.Data.GetDataPresent("Nodes") &&
-                         e.Data.GetData("Nodes") is ObservableCollection<TreeNode> treeNodes)
-                {
-                    files.AddRange(treeNodes.Select(n => n.Item).OfType<FileSystemModel>().Select(fsm => fsm.FullName));
-                }
-
-                // If items are selected: ignore anything that isn't
-                if (selectedFilePaths.Count > 0)
-                {
-                    files = files.Where(p => selectedFilePaths.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
-                }
-
-                // if dragged on file, use file's parent directory as target dir
-                var targetDirectory = Directory.Exists(targetFile.FullName)
-                    ? targetFile.FullName
-                    : Path.GetDirectoryName(targetFile.FullName);
-
-                // 1146: addresses "prevent self-drag-and-drop"
-                if (files.Count == 0 || files[0] == targetDirectory)
+                if (plan is not { IsActionable: true, TargetDirectory: { } targetDirectory })
                 {
                     e.Handled = true;
                     return;
                 }
 
-                await vm.ProcessFileAction(files, targetDirectory);
+                DispatcherHelper.PostOnMainThread(() => vm.ProcessFileAction(plan.Files, targetDirectory));
             }
             catch (Exception error)
             {
                 e.Handled = true;
-                Console.WriteLine(error.Message);
+                _loggerService?.Error($"Drag and drop failed: {error.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Tell the user in logs about any attempted drag-and-drop that got refused.
+        /// </summary>
+        private void ReportRefusals(ProjectExplorerDropHelper.DropPlan plan)
+        {
+            foreach (var refused in plan.RefusedDirectories)
+            {
+                _loggerService?.Warning($"Can't move {refused} inside itself - skipped.");
+            }
+
+            if (plan.Rejection == ProjectExplorerDropHelper.DropRejection.ProjectRoot)
+            {
+                _loggerService?.Warning(
+                    "Can't drop files in the project root, choombatta. Use the archive, raw, or resources folder.");
             }
         }
 

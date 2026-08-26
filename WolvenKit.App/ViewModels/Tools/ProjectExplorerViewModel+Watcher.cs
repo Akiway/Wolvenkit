@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -10,24 +10,19 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using WolvenKit.App.Models;
 using WolvenKit.App.Models.ProjectManagement.Project;
+using WolvenKit.App.Services;
 using WolvenKit.Core.Interfaces;
 using WolvenKit.RED4.Types.Exceptions;
 
-namespace WolvenKit.App.Services;
+namespace WolvenKit.App.ViewModels.Tools;
 
-/// <summary>
-/// This service watches certain locations in the game files and notifies changes
-/// </summary>
-public partial class WatcherService : ObservableObject, IWatcherService
+public partial class ProjectExplorerViewModel
 {
     #region fields
 
-    private readonly ILoggerService? _loggerService;
-
     private string _projectDirectory = string.Empty;
     private FileSystemModel? _projectFileSystemModel;
-
-    private readonly FileSystemWatcher _modsWatcher;
+    private FileSystemWatcher _modsWatcher = null!;
 
     private readonly object _refreshLock = new();
 
@@ -36,25 +31,10 @@ public partial class WatcherService : ObservableObject, IWatcherService
 
     private readonly ConcurrentQueue<FileSystemEventArgsWrapper> _fileChanges = new();
 
-    public ConcurrentDictionary<string, FileSystemModel> FileLookup { get; } = new();
-
-    public Dictionary<string, bool> ExpansionStateDictionary { get; set; } = [];
+    private ConcurrentDictionary<string, FileSystemModel> FileLookup { get; } = new();
 
     private readonly ConcurrentDictionary<string, FileSystemModel> _fileLookup = new();
     private readonly ConcurrentDictionary<string, long> _removedFiles = new();
-
-    [ObservableProperty]
-    private DispatchedObservableCollection<FileSystemModel> _fileList = new();
-
-    [ObservableProperty]
-    private DispatchedObservableCollection<FileSystemModel> _fileTree = new();
-
-    private static readonly int _maxDoP = Environment.ProcessorCount > 1 ? Environment.ProcessorCount : 1;
-
-    private readonly ParallelOptions _parallelOptions = new()
-    {
-        MaxDegreeOfParallelism = _maxDoP,
-    };
 
     private static readonly List<string> s_ignoredExtensions =
     [
@@ -79,16 +59,17 @@ public partial class WatcherService : ObservableObject, IWatcherService
 
     private bool _isWatcherStopped;
 
-    public bool IsWatcherStopped => _isWatcherStopped;
+    private bool IsWatcherStopped => _isWatcherStopped;
 
     #endregion
 
     #region Constructor
 
-    public WatcherService(ILoggerService? loggerService)
+    /// <summary>
+    /// Initializes the `_modsWatcher`.
+    /// </summary>
+    private void InitializeProjectWatcher()
     {
-        _loggerService = loggerService;
-
         _modsWatcher = new FileSystemWatcher
         {
             Filter = "*",
@@ -105,7 +86,7 @@ public partial class WatcherService : ObservableObject, IWatcherService
 
     #region Start / Resume / Watch / Unwatch Methods
 
-    public void WatchProject(Cp77Project project)
+    private void WatchProject(Cp77Project project)
     {
         _projectDirectory = project.FileDirectory;
         _projectFileSystemModel = new FileSystemModel(null, FileSystemModel.ProjectDirName, _projectDirectory, true);
@@ -122,14 +103,14 @@ public partial class WatcherService : ObservableObject, IWatcherService
         }
 
         WatchLocation();
-        Refresh();
+        RefreshWatcher();
     }
 
     public void Suspend() => _modsWatcher.EnableRaisingEvents = false;
 
     public void Resume() => _modsWatcher.EnableRaisingEvents = true;
 
-    public void UnwatchProject(Cp77Project? project)
+    internal void UnwatchProject(Cp77Project? project)
     {
         _isWatcherStopped = true;
         UnwatchLocation();
@@ -171,7 +152,7 @@ public partial class WatcherService : ObservableObject, IWatcherService
             }
 
             var extension = Path.GetExtension(e.Name);
-            if (!string.IsNullOrEmpty(extension) && HasIgnoredExtension(e.Name))
+            if (!string.IsNullOrEmpty(extension) && (HasIgnoredExtension(e.Name) && e.ChangeType != WatcherChangeTypes.Renamed))
             {
                 continue;
             }
@@ -282,8 +263,7 @@ public partial class WatcherService : ObservableObject, IWatcherService
                     isDirectory = attr.HasFlag(FileAttributes.Directory);
                 }
 
-                var isExpanded = GetExpansionStateOrNull(tmpPath) ?? false;
-                current = new FileSystemModel(parent, part, tmpPath, isDirectory, isExpanded);
+                current = new FileSystemModel(parent, part, tmpPath, isDirectory);
 
                 if (!current.IsDirectory)
                 {
@@ -365,9 +345,22 @@ public partial class WatcherService : ObservableObject, IWatcherService
                 return;
             }
 
+            if (!_fileLookup.TryGetValue(renamedEventArgs.OldName, out var renamedModel))
+            {
+                _loggerService?.Warning($"Renamed file was not in the database: {renamedEventArgs.OldName}. Recommend to restart WolvenKit.");
+                return;
+            }
+
+            if (!renamedModel.IsDirectory)
+            {
+                _fileChanges.Enqueue(new FileSystemEventArgsWrapper(
+                    new FileSystemEventArgs(WatcherChangeTypes.Deleted, _projectDirectory, renamedEventArgs.OldName)));
+                return;
+            }
+
             foreach (var key in _fileLookup.Keys)
             {
-                if (!key.StartsWith(renamedEventArgs.OldName))
+                if (!key.StartsWith(renamedEventArgs.OldName + Path.DirectorySeparatorChar))
                 {
                     continue;
                 }
@@ -420,7 +413,7 @@ public partial class WatcherService : ObservableObject, IWatcherService
         }
     }
 
-    public void ForceStop()
+    private void ForceStop()
     {
         _modsWatcher.EnableRaisingEvents = false;
 
@@ -461,18 +454,19 @@ public partial class WatcherService : ObservableObject, IWatcherService
         public long EventAddedAt { get; } = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
     }
 
-    public void Refresh()
+    public void RefreshWatcher()
     {
         lock (_refreshLock)
         {
-            InternalRefresh();
+            InternalRefreshWatcher();
         }
     }
 
-    private void InternalRefresh()
+    private void InternalRefreshWatcher()
     {
         if (string.IsNullOrEmpty(_projectDirectory))
         {
+            // On first app launch, there's no project yet.
             return;
         }
 
@@ -546,8 +540,7 @@ public partial class WatcherService : ObservableObject, IWatcherService
             parent,
             Path.GetFileName(entry.RawRelPath),
             entry.RawRelPath,
-            entry.IsDirectory,
-            GetExpansionStateOrNull(entry.RawRelPath) ?? false);
+            entry.IsDirectory);
 
         if (!_fileLookup.TryAdd(entry.RawRelPath, model))
         {
@@ -565,17 +558,9 @@ public partial class WatcherService : ObservableObject, IWatcherService
         }
         else if (parent is { } parentModel)
         {
-            parentModel.Children.SuppressNotification = true;
             parentModel.Children.Add(model);
-            parentModel.Children.SuppressNotification = false;
         }
     }
 
     #endregion
-
-    #region helpers
-
-    public bool? GetExpansionStateOrNull(string relPath) => ExpansionStateDictionary.TryGetValue(relPath, out var state) ? state : null;
-
-    #endregion helpers
 }

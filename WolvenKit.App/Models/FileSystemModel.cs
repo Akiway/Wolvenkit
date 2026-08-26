@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using WolvenKit.Common;
+using WolvenKit.Core.Exceptions;
 using WolvenKit.Core.Extensions;
 using WolvenKit.RED4.Types;
 
@@ -85,18 +86,6 @@ public class FileSystemModel : INotifyPropertyChanged
     [Browsable(false)] public DispatchedObservableCollection<FileSystemModel> Children { get; } = new();
     [Browsable(false)] public bool IsDirectory { get; }
 
-    private bool _isExpanded;
-
-    /// <summary>
-    /// Indicates whether this directory node is expanded in the Project Explorer.
-    /// This is the source of truth for expansion state and survives tree rebuilds.
-    /// </summary>
-    public bool IsExpanded
-    {
-        get => _isExpanded;
-        set => SetField(ref _isExpanded, value);
-    }
-
     /// <summary>
     /// FileSystemModel represents a file or directory on-disk.
     /// </summary>
@@ -104,7 +93,7 @@ public class FileSystemModel : INotifyPropertyChanged
     /// <param name="name"></param><remark>Name of the file with extension but no paths.</remark>
     /// <param name="rawRelativePath"></param><remark>Path above 'source' to the file. E.g. archive/worlds/myfile.ent</remark>
     /// <param name="isDirectory"></param>
-    public FileSystemModel(FileSystemModel? parent, string name, string rawRelativePath, bool isDirectory, bool isExpanded = false)
+    public FileSystemModel(FileSystemModel? parent, string name, string rawRelativePath, bool isDirectory)
     {
         Parent = parent;
 
@@ -120,8 +109,6 @@ public class FileSystemModel : INotifyPropertyChanged
         _name = name;
         RawRelativePath = rawRelativePath;
         IsDirectory = isDirectory;
-        _isExpanded = isDirectory && isExpanded; // only directories can be expanded
-
         GetMetadata();
     }
 
@@ -212,6 +199,50 @@ public class FileSystemModel : INotifyPropertyChanged
         }
 
         return string.Format(CultureInfo.InvariantCulture, "{0:0.##} {1}", len, sizes[order]);
+    }
+
+    /// <summary>
+    /// Returns true if the supplied model is an ancestor of this model.
+    /// </summary>
+    /// <param name="ancestorDir"></param>
+    /// <returns></returns>
+    public bool HasAncestorDir(FileSystemModel ancestorDir)
+    {
+        if (Parent == null)
+        {
+            return false;
+        }
+
+        if (Parent.FullName == ancestorDir.FullName)
+        {
+            return true;
+        }
+
+        return Parent.HasAncestorDir(ancestorDir);
+    }
+
+    /// <summary>
+    /// Returns its parent if it's a file, otherwise returns itself.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="WolvenKitException"></exception>
+    public FileSystemModel TargetDir
+    {
+        get
+        {
+            if (IsDirectory)
+            {
+                return this;
+            }
+
+            if (Parent is { } parent)
+            {
+                return parent;
+            }
+
+            throw new WolvenKitException(0x4025a73,
+                $"No directory model exists for drag and drop operation. Target file path: ${FullName}.");
+        }
     }
 
     #region INotifyPropertyChanged
